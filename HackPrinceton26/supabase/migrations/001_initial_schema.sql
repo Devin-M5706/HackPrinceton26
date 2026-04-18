@@ -39,6 +39,7 @@ create table if not exists cases (
   clinic_id          uuid references clinics(id),
   lat                double precision not null default 0,
   lng                double precision not null default 0,
+  region             text not null default '',
   child_age_months   int not null default 0,
   created_at         timestamptz not null default now()
 );
@@ -46,6 +47,7 @@ create table if not exists cases (
 create index if not exists cases_chw_id_idx       on cases(chw_id);
 create index if not exists cases_created_at_idx   on cases(created_at desc);
 create index if not exists cases_triage_idx        on cases(triage);
+create index if not exists cases_region_idx        on cases(region);
 
 -- ── alerts ───────────────────────────────────────────────────────────────────
 

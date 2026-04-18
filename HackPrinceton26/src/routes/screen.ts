@@ -190,6 +190,7 @@ screenRouter.post('/', requireAuth, async (req: Request, res: Response) => {
         clinic_id: referralResult.clinic_id ?? null,
         lat,
         lng,
+        region: chw.region,
         child_age_months: body.child_meta.age_months,
       })
       .select()

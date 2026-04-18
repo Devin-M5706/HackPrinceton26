@@ -1,0 +1,18 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+frontend/dist/
+frontend/dev-dist/
+HackPrinceton26/dist/
+
+# Environment variables
+.env
+.env.local
+
+# Bun
+bun.lockb
+
+# OS
+.DS_Store
+Thumbs.db

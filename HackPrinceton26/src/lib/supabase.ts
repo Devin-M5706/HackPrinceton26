@@ -40,6 +40,7 @@ export interface Chw {
   region: string;
   language: Language;
   auth_token: string;
+  phone: string | null;
   created_at: string;
 }
 

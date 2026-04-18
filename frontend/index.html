@@ -437,7 +437,7 @@ footer{background:var(--navy);padding:32px 0;border-top:1px solid rgba(255,255,2
         <div class="login-hint" id="phone-hint">Type the number you use every day. We will send you a code.</div>
         <input class="big-input" id="phone-input" type="tel" inputmode="numeric" placeholder="e.g. 0812 345 6789" oninput="onPhoneInput()"/>
         <div class="login-error" id="phone-error">Please enter a valid phone number (at least 8 digits).</div>
-        <button class="modal-btn" id="phone-next-btn" onclick="goToStep('step-pin')" disabled>Send me a code</button>
+        <button class="modal-btn" id="phone-next-btn" onclick="requestOtp()" disabled>Send me a code</button>
         <button class="modal-back" onclick="goToStep('step-role')">&#8592; Go back</button>
       </div>
 
@@ -1023,7 +1023,29 @@ footer{background:var(--navy);padding:32px 0;border-top:1px solid rgba(255,255,2
   </div>
 </footer>
 
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import { getAuth, RecaptchaVerifier, signInWithPhoneNumber } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+
+const FIREBASE_CONFIG = {
+  apiKey:            'REPLACE_WITH_FIREBASE_API_KEY',
+  authDomain:        'REPLACE_WITH_PROJECT_ID.firebaseapp.com',
+  projectId:         'REPLACE_WITH_PROJECT_ID',
+};
+
+const firebaseApp  = initializeApp(FIREBASE_CONFIG);
+const firebaseAuth = getAuth(firebaseApp);
+
+const API_BASE = 'http://localhost:3001';
+let confirmationResult = null;
+
+window._firebaseAuth = firebaseAuth;
+window._setConfirmation = (r) => { confirmationResult = r; };
+window._getConfirmation = () => confirmationResult;</script>
+
 <script>
+const API_BASE = window.API_BASE ?? 'http://localhost:3001';
+
 function handleUpload(e){
   const f=e.target.files[0];if(!f)return;
   const r=new FileReader();
@@ -1135,14 +1157,71 @@ function pinDel(){
   document.getElementById('pd'+(pinValue.length-1)).classList.remove('filled');
   pinValue=pinValue.slice(0,-1);
 }
-function checkPin(){
-  // Accept any 4-digit code for demo; real validation hits /api/auth
-  const isParent = selectedRole==='parent';
-  document.getElementById('success-title').textContent = isParent ? 'Welcome!' : 'Welcome back!';
-  document.getElementById('success-body').textContent = isParent
-    ? 'You can now take a photograph of your child and our system will check them for free. It takes about 15 minutes.'
-    : 'You are signed in as a community health worker. You can now submit patient cases for screening.';
-  goToStep('step-success');
+async function requestOtp(){
+  const btn = document.getElementById('phone-next-btn');
+  const phone = document.getElementById('phone-input').value.trim();
+  btn.textContent = 'Sending…';
+  btn.disabled = true;
+  try {
+    // Invisible reCAPTCHA required by Firebase phone auth
+    if (!window._recaptchaVerifier) {
+      window._recaptchaVerifier = new (await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js')).RecaptchaVerifier(
+        window._firebaseAuth, 'phone-next-btn', { size: 'invisible' }
+      );
+    }
+    const result = await (await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js'))
+      .signInWithPhoneNumber(window._firebaseAuth, phone, window._recaptchaVerifier);
+    window._setConfirmation(result);
+    goToStep('step-pin');
+  } catch(e) {
+    console.error('[auth] Firebase OTP error:', e);
+    document.getElementById('phone-error').textContent = 'Could not send code — check your number and try again.';
+    document.getElementById('phone-error').style.display = 'block';
+    window._recaptchaVerifier = null;
+  } finally {
+    btn.textContent = 'Send me a code';
+    btn.disabled = false;
+  }
+}
+
+async function checkPin(){
+  const confirmation = window._getConfirmation();
+  if (!confirmation) {
+    document.getElementById('pin-error').textContent = 'Session expired — please go back and request a new code.';
+    document.getElementById('pin-error').style.display = 'block';
+    resetPin();
+    return;
+  }
+  try {
+    const credential = await confirmation.confirm(pinValue);
+    const idToken = await credential.user.getIdToken();
+
+    const res = await fetch(`${API_BASE}/api/auth/firebase`, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ idToken }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      document.getElementById('pin-error').textContent = data.error ?? 'Incorrect code — try again.';
+      document.getElementById('pin-error').style.display = 'block';
+      resetPin();
+      return;
+    }
+    localStorage.setItem('noma_token', data.token);
+    localStorage.setItem('noma_name', data.name);
+    const isParent = selectedRole === 'parent';
+    document.getElementById('success-title').textContent = `Welcome, ${data.name}!`;
+    document.getElementById('success-body').textContent = isParent
+      ? 'You can now take a photograph of your child and our system will check them for free. It takes about 15 minutes.'
+      : 'You are signed in as a community health worker. You can now submit patient cases for screening.';
+    goToStep('step-success');
+  } catch(e) {
+    console.error('[auth] Firebase confirm error:', e);
+    document.getElementById('pin-error').textContent = 'Incorrect code — try again.';
+    document.getElementById('pin-error').style.display = 'block';
+    resetPin();
+  }
 }
 
 function revealWaChat(){

@@ -3,6 +3,7 @@ import express from "express";
 import cors from "cors";
 import helmet from "helmet";
 
+import { authRouter } from "./routes/auth";
 import { screenRouter } from "./routes/screen";
 import { casesRouter } from "./routes/cases";
 import { alertsRouter } from "./routes/alerts";
@@ -19,12 +20,16 @@ const PORT = process.env.PORT ?? 3001;
 // ── Middleware ────────────────────────────────────────────────────────────────
 
 app.use(helmet());
-app.use(cors({ origin: "*" })); // tighten for production
+app.use(cors({
+  origin: process.env.FRONTEND_URL ?? '*',
+  allowedHeaders: ['Authorization', 'Content-Type'],
+}));
 app.use(express.json({ limit: "20mb" })); // base64 images can be large
 app.use(globalLimiter);
 
 // ── Routes ────────────────────────────────────────────────────────────────────
 
+app.use("/api/auth", authRouter);
 app.use("/api/screen", screenLimiter, screenRouter);
 app.use("/api/cases", casesRouter);
 app.use("/api/alerts", alertsRouter);

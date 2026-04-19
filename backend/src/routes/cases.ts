@@ -9,6 +9,20 @@ import { supabase } from '../lib/supabase';
 
 export const casesRouter = Router();
 
+// GET /api/cases/map — all cases with coordinates (public, for map view)
+casesRouter.get('/map', async (_req: Request, res: Response) => {
+  const { data, error } = await supabase()
+    .from('cases')
+    .select('id, lat, lng, stage, triage, region, created_at, child_age_months, chw_id, chws(name, region)')
+    .not('lat', 'eq', 0)
+    .not('lng', 'eq', 0)
+    .order('created_at', { ascending: false })
+    .limit(500);
+
+  if (error) { res.status(500).json({ error: error.message }); return; }
+  res.json({ data: data ?? [] });
+});
+
 casesRouter.use(requireAuth);
 
 // GET /api/cases?region=&since=&page=&limit=

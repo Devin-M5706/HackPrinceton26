@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>NomaAlert — Case Map</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css"/>
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:100%;height:100%;background:#07090f;font-family:'Inter',system-ui,sans-serif;color:#e6eaf2;overflow:hidden}
+
+/* NAV */
+.nav{position:fixed;top:0;left:0;right:0;height:52px;z-index:1000;background:rgba(7,9,15,.95);border-bottom:1px solid rgba(255,255,255,.07);display:flex;align-items:center;padding:0 24px;gap:16px}
+.nav-brand{display:flex;align-items:center;gap:8px;text-decoration:none;margin-right:auto}
+.nav-logo{width:26px;height:26px;background:#e84040;border-radius:5px;display:flex;align-items:center;justify-content:center}
+.nav-logo svg{width:14px;height:14px;stroke:#fff;fill:none;stroke-width:2.5;stroke-linecap:round}
+.nav-name{font-size:13px;font-weight:600;color:#fff}
+.nav-tag{font-size:10px;color:#6b7280;text-transform:uppercase;letter-spacing:.6px}
+.back-btn{display:flex;align-items:center;gap:6px;background:transparent;border:1px solid rgba(255,255,255,.1);color:#94a3b8;font-size:12px;font-weight:500;padding:6px 14px;border-radius:5px;cursor:pointer;text-decoration:none;transition:all .15s;font-family:inherit}
+.back-btn:hover{color:#fff;border-color:rgba(255,255,255,.2)}
+.back-btn svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+
+/* MAP */
+#map{position:fixed;top:52px;left:0;right:0;bottom:0}
+
+/* LEGEND */
+.legend{position:fixed;bottom:28px;left:20px;z-index:900;background:#0d1117;border:1px solid rgba(255,255,255,.12);border-radius:10px;padding:14px 16px;min-width:160px}
+.legend-title{font-size:10px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:.7px;margin-bottom:10px}
+.legend-item{display:flex;align-items:center;gap:8px;margin-bottom:7px;font-size:12px;color:#94a3b8}
+.legend-item:last-child{margin-bottom:0}
+.leg-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+
+/* STATS */
+.stats-panel{position:fixed;top:68px;right:16px;z-index:900;background:#0d1117;border:1px solid rgba(255,255,255,.12);border-radius:10px;padding:14px 18px;min-width:180px}
+.stats-title{font-size:10px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:.7px;margin-bottom:12px}
+.stat-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;font-size:12px}
+.stat-row:last-child{margin-bottom:0}
+.stat-label{color:#6b7280}
+.stat-val{font-weight:600;color:#fff}
+
+/* LOADING */
+.loading{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:2000;text-align:center;color:#6b7280;font-size:13px}
+.spinner{width:28px;height:28px;border:2px solid rgba(255,255,255,.08);border-top-color:#3b82f6;border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 12px}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* POPUP */
+.leaflet-popup-content-wrapper{background:#0d1117;border:1px solid rgba(255,255,255,.12);border-radius:8px;box-shadow:0 8px 32px rgba(0,0,0,.6)}
+.leaflet-popup-content{margin:14px 16px;font-family:'Inter',sans-serif;min-width:180px}
+.leaflet-popup-tip{background:#0d1117}
+.leaflet-popup-close-button{color:#6b7280!important;font-size:16px!important;right:8px!important;top:6px!important}
+.popup-stage{font-size:13px;font-weight:700;margin-bottom:6px}
+.popup-row{font-size:11px;color:#6b7280;margin-bottom:3px;display:flex;gap:6px}
+.popup-row span{color:#94a3b8}
+.popup-chw{margin-top:8px;padding-top:8px;border-top:1px solid rgba(255,255,255,.07);font-size:11px;color:#4b5563}
+.popup-chw strong{color:#60a5fa}
+
+/* Cluster overrides */
+.marker-cluster-small,.marker-cluster-medium,.marker-cluster-large{background:rgba(232,64,64,.15)!important}
+.marker-cluster-small div,.marker-cluster-medium div,.marker-cluster-large div{background:rgba(232,64,64,.6)!important;color:#fff!important;font-family:'Inter',sans-serif!important;font-weight:600!important;font-size:12px!important}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <a class="nav-brand" href="index.html">
+    <div class="nav-logo"><svg viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg></div>
+    <div>
+      <div class="nav-name">NomaAlert</div>
+    </div>
+  </a>
+  <div class="nav-tag">Case surveillance map</div>
+  <a class="back-btn" href="index.html">
+    <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+    Back
+  </a>
+</nav>
+
+<div id="map"></div>
+
+<div class="legend">
+  <div class="legend-title">Triage</div>
+  <div class="legend-item"><div class="leg-dot" style="background:#e84040"></div>Urgent</div>
+  <div class="legend-item"><div class="leg-dot" style="background:#f59e0b"></div>Refer</div>
+  <div class="legend-item"><div class="leg-dot" style="background:#3b82f6"></div>Monitor</div>
+  <div class="legend-item"><div class="leg-dot" style="background:#22c55e"></div>Healthy</div>
+  <div style="margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,.08)">
+    <div class="legend-item"><div class="leg-dot" style="background:#a855f7"></div>Historical</div>
+  </div>
+</div>
+
+<div class="stats-panel" id="stats-panel">
+  <div class="stats-title">Summary</div>
+  <div class="stat-row"><div class="stat-label">Total cases</div><div class="stat-val" id="s-total">—</div></div>
+  <div class="stat-row"><div class="stat-label">Urgent</div><div class="stat-val" style="color:#e84040" id="s-urgent">—</div></div>
+  <div class="stat-row"><div class="stat-label">Refer</div><div class="stat-val" style="color:#f59e0b" id="s-refer">—</div></div>
+  <div class="stat-row"><div class="stat-label">CHWs active</div><div class="stat-val" style="color:#60a5fa" id="s-chws">—</div></div>
+</div>
+
+<div class="loading" id="loading">
+  <div class="spinner"></div>
+  Loading cases…
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+<script>
+const API_BASE = 'http://localhost:3001';
+const TRIAGE_COLOR = { urgent:'#e84040', refer:'#f59e0b', monitor:'#3b82f6', healthy:'#22c55e' };
+const HIST_COLOR = '#a855f7';
+
+const HISTORICAL = [
+  { lat:11.85, lng:13.16, label:'Maiduguri, Nigeria',    period:'2011–2020', cases:1240, region:'Borno State',        r:1.1 },
+  { lat:12.00, lng:8.52,  label:'Kano, Nigeria',         period:'2011–2020', cases:980,  region:'Kano State',         r:0.9 },
+  { lat:10.52, lng:7.44,  label:'Kaduna, Nigeria',       period:'2011–2020', cases:870,  region:'Kaduna State',       r:0.9 },
+  { lat:13.06, lng:5.24,  label:'Sokoto, Nigeria',       period:'2011–2020', cases:760,  region:'Sokoto State',       r:0.8 },
+  { lat:9.07,  lng:7.40,  label:'Abuja, Nigeria',        period:'2011–2020', cases:420,  region:'FCT',                r:0.6 },
+  { lat:7.38,  lng:3.90,  label:'Ibadan, Nigeria',       period:'1982–1996', cases:133,  region:'Oyo State',          r:0.4 },
+  { lat:12.60, lng:37.47, label:'Gondar, Ethiopia',      period:'2004–2023', cases:94,   region:'Amhara Region',      r:0.4 },
+  { lat:9.03,  lng:38.74, label:'Addis Ababa, Ethiopia', period:'2015–2019', cases:80,   region:'Addis Ababa',        r:0.3 },
+  { lat:11.59, lng:37.39, label:'Bahir Dar, Ethiopia',   period:'2004–2023', cases:88,   region:'Amhara Region',      r:0.4 },
+  { lat:13.80, lng:8.99,  label:'Zinder, Niger',         period:'2001–2006', cases:82,   region:'Zinder Region',      r:0.5 },
+  { lat:14.69, lng:-17.44,label:'Dakar, Senegal',        period:'1981–1993', cases:73,   region:'Dakar Region',       r:0.4 },
+  { lat:16.02, lng:-16.49,label:'Saint-Louis, Senegal',  period:'2012–2014', cases:31,   region:'Saint-Louis Region', r:0.3 },
+  { lat:14.49, lng:-4.20, label:'Mopti, Mali',           period:'2004–2009', cases:68,   region:'Mopti Region',       r:0.4 },
+  { lat:16.27, lng:-0.04, label:'Gao, Mali',             period:'2004–2009', cases:52,   region:'Gao Region',         r:0.4 },
+  { lat:16.77, lng:-3.00, label:'Tombouctou, Mali',      period:'2004–2009', cases:43,   region:'Tombouctou Region',  r:0.3 },
+];
+
+const map = L.map('map', { center:[12,5], zoom:4, zoomControl:false });
+L.control.zoom({ position: 'bottomright' }).addTo(map);
+
+L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+  attribution: '© OpenStreetMap © CARTO', subdomains: 'abcd', maxZoom: 19,
+}).addTo(map);
+
+const dotIcon = color => L.divIcon({
+  html: `<svg xmlns="http://www.w3.org/2000/svg" width="8" height="8" viewBox="0 0 8 8"><circle cx="4" cy="4" r="4" fill="${color}" opacity=".85"/></svg>`,
+  className: '', iconSize:[8,8], iconAnchor:[4,4], popupAnchor:[0,-6],
+});
+const pinIcon = color => L.divIcon({
+  html: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="26" viewBox="0 0 20 26"><path d="M10 0C4.477 0 0 4.477 0 10c0 7 10 16 10 16S20 17 20 10C20 4.477 15.523 0 10 0z" fill="${color}" opacity=".9"/><circle cx="10" cy="10" r="4" fill="white" opacity=".9"/></svg>`,
+  className: '', iconSize:[20,26], iconAnchor:[10,26], popupAnchor:[0,-26],
+});
+
+function formatDate(iso) {
+  if (!iso) return '—';
+  return new Date(iso).toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' });
+}
+
+const clusterGroup = L.markerClusterGroup({ maxClusterRadius: 40, showCoverageOnHover: false, chunkedLoading: true });
+map.addLayer(clusterGroup);
+
+// Scatter one dot per historical case
+HISTORICAL.forEach(h => {
+  const popup = `
+    <div class="popup-stage" style="color:${HIST_COLOR}">${h.label}</div>
+    <div class="popup-row">Region: <span>${h.region}</span></div>
+    <div class="popup-row">Period: <span>${h.period}</span></div>
+    <div class="popup-row">Source pool: <span>${h.cases.toLocaleString()} cases</span></div>
+    <div class="popup-chw" style="font-style:italic">Historical literature data</div>
+  `;
+  for (let i = 0; i < h.cases; i++) {
+    const angle = Math.random() * 2 * Math.PI;
+    const dist  = Math.sqrt(Math.random()) * h.r;
+    clusterGroup.addLayer(
+      L.marker([h.lat + dist * Math.sin(angle), h.lng + dist * Math.cos(angle)], { icon: dotIcon(HIST_COLOR) })
+       .bindPopup(popup, { maxWidth: 240 })
+    );
+  }
+});
+
+async function loadCases() {
+  try {
+    const res = await fetch(`${API_BASE}/api/cases/map`);
+    const { data } = await res.json();
+    document.getElementById('loading').style.display = 'none';
+
+    const chwSet = new Set();
+    let urgent = 0, refer = 0;
+    (data ?? []).forEach(c => {
+      if (c.triage === 'urgent') urgent++;
+      if (c.triage === 'refer') refer++;
+      if (c.chw_id) chwSet.add(c.chw_id);
+    });
+    document.getElementById('s-total').textContent = HISTORICAL.reduce((s,h)=>s+h.cases,0) + (data??[]).length;
+    document.getElementById('s-urgent').textContent = urgent;
+    document.getElementById('s-refer').textContent = refer;
+    document.getElementById('s-chws').textContent = chwSet.size;
+
+    (data ?? []).forEach(c => {
+      if (!c.lat || !c.lng) return;
+      const chw = c.chws;
+      const chwName = chw?.name ?? `CHW ${c.chw_id?.slice(-6) ?? '—'}`;
+      const chwRegion = chw?.region ?? c.region ?? '—';
+      const color = TRIAGE_COLOR[c.triage] ?? '#e84040';
+      const popup = `
+        <div class="popup-stage" style="color:${color}">
+          Stage ${c.stage ?? '?'} — ${(c.triage ?? '').charAt(0).toUpperCase() + (c.triage ?? '').slice(1)}
+        </div>
+        <div class="popup-row">Age: <span>${c.child_age_months ? Math.round(c.child_age_months/12*10)/10 + ' yrs' : '—'}</span></div>
+        <div class="popup-row">Region: <span>${c.region ?? '—'}</span></div>
+        <div class="popup-row">Date: <span>${formatDate(c.created_at)}</span></div>
+        <div class="popup-chw">Reported by <strong>${chwName}</strong> · ${chwRegion}</div>
+      `;
+      clusterGroup.addLayer(L.marker([c.lat, c.lng], { icon: pinIcon(color) }).bindPopup(popup, { maxWidth: 240 }));
+    });
+
+    if (clusterGroup.getLayers().length > 0) {
+      map.fitBounds(clusterGroup.getBounds(), { padding: [60, 60], maxZoom: 8 });
+    }
+  } catch(err) {
+    document.getElementById('loading').textContent = 'Could not load cases — is the backend running?';
+  }
+}
+
+loadCases();
+</script>
+</body>
+</html>

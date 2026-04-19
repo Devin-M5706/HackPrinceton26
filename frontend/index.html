@@ -6,6 +6,9 @@
 <title>NomaAlert — AI Early Detection</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css"/>
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css"/>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -160,6 +163,10 @@ body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--t
     <div class="pulse"></div>
     <span id="alert-count">…</span> active alerts
   </div>
+  <a href="map.html" style="display:flex;align-items:center;gap:6px;background:transparent;border:1px solid rgba(255,255,255,.1);color:#94a3b8;font-size:12px;font-weight:500;padding:6px 14px;border-radius:5px;text-decoration:none;transition:all .15s" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='#94a3b8'">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/><line x1="9" y1="3" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="21"/></svg>
+    Case map
+  </a>
   <button class="nav-login" onclick="openLogin()">Sign in</button>
 </nav>
 
@@ -241,6 +248,22 @@ body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--t
     </div>
   </div>
 
+</div>
+
+<!-- CASE MAP SECTION -->
+<div style="padding:48px;max-width:1200px;margin:0 auto">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+    <div>
+      <div style="font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.7px;margin-bottom:6px">Live surveillance</div>
+      <div style="font-size:20px;font-weight:700;color:#fff">Reported cases</div>
+    </div>
+    <div style="display:flex;gap:20px">
+      <div style="text-align:right"><div style="font-size:18px;font-weight:700;color:#e84040" id="ms-urgent">—</div><div style="font-size:10px;color:var(--muted)">Urgent</div></div>
+      <div style="text-align:right"><div style="font-size:18px;font-weight:700;color:#f59e0b" id="ms-refer">—</div><div style="font-size:10px;color:var(--muted)">Refer</div></div>
+      <div style="text-align:right"><div style="font-size:18px;font-weight:700;color:#60a5fa" id="ms-chws">—</div><div style="font-size:10px;color:var(--muted)">CHWs</div></div>
+    </div>
+  </div>
+  <div id="inline-map" style="width:100%;height:480px;border-radius:10px;overflow:hidden;border:1px solid rgba(255,255,255,.08)"></div>
 </div>
 
 <!-- AUTH MODAL -->
@@ -533,6 +556,96 @@ fetch(`${API_BASE}/api/alerts?days=7`)
   })
   .catch(()=>{document.getElementById('alert-count').textContent='0';});
 </script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+<script>
+(function initMap() {
+  const TRIAGE_COLOR = { urgent:'#e84040', refer:'#f59e0b', monitor:'#3b82f6', healthy:'#22c55e' };
+  const HIST_COLOR = '#a855f7';
+
+  const HISTORICAL = [
+    { lat:11.85, lng:13.16, label:'Maiduguri, Nigeria',    period:'2011–2020', cases:1240, region:'Borno State',          r:1.1 },
+    { lat:12.00, lng:8.52,  label:'Kano, Nigeria',         period:'2011–2020', cases:980,  region:'Kano State',           r:0.9 },
+    { lat:10.52, lng:7.44,  label:'Kaduna, Nigeria',       period:'2011–2020', cases:870,  region:'Kaduna State',         r:0.9 },
+    { lat:13.06, lng:5.24,  label:'Sokoto, Nigeria',       period:'2011–2020', cases:760,  region:'Sokoto State',         r:0.8 },
+    { lat:9.07,  lng:7.40,  label:'Abuja, Nigeria',        period:'2011–2020', cases:420,  region:'FCT',                  r:0.6 },
+    { lat:7.38,  lng:3.90,  label:'Ibadan, Nigeria',       period:'1982–1996', cases:133,  region:'Oyo State',            r:0.4 },
+    { lat:12.60, lng:37.47, label:'Gondar, Ethiopia',      period:'2004–2023', cases:94,   region:'Amhara Region',        r:0.4 },
+    { lat:9.03,  lng:38.74, label:'Addis Ababa, Ethiopia', period:'2015–2019', cases:80,   region:'Addis Ababa',          r:0.3 },
+    { lat:11.59, lng:37.39, label:'Bahir Dar, Ethiopia',   period:'2004–2023', cases:88,   region:'Amhara Region',        r:0.4 },
+    { lat:13.80, lng:8.99,  label:'Zinder, Niger',         period:'2001–2006', cases:82,   region:'Zinder Region',        r:0.5 },
+    { lat:14.69, lng:-17.44,label:'Dakar, Senegal',        period:'1981–1993', cases:73,   region:'Dakar Region',         r:0.4 },
+    { lat:16.02, lng:-16.49,label:'Saint-Louis, Senegal',  period:'2012–2014', cases:31,   region:'Saint-Louis Region',   r:0.3 },
+    { lat:14.49, lng:-4.20, label:'Mopti, Mali',           period:'2004–2009', cases:68,   region:'Mopti Region',         r:0.4 },
+    { lat:16.27, lng:-0.04, label:'Gao, Mali',             period:'2004–2009', cases:52,   region:'Gao Region',           r:0.4 },
+    { lat:16.77, lng:-3.00, label:'Tombouctou, Mali',      period:'2004–2009', cases:43,   region:'Tombouctou Region',    r:0.3 },
+  ];
+
+  const map = L.map('inline-map', { center:[12,5], zoom:4, zoomControl:true, scrollWheelZoom:false });
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+    attribution:'© OpenStreetMap © CARTO', subdomains:'abcd', maxZoom:19
+  }).addTo(map);
+  const clusters = L.markerClusterGroup({ maxClusterRadius:40, showCoverageOnHover:false, chunkedLoading:true });
+  map.addLayer(clusters);
+
+  const dotIcon = color => L.divIcon({
+    html: `<svg xmlns="http://www.w3.org/2000/svg" width="8" height="8" viewBox="0 0 8 8"><circle cx="4" cy="4" r="4" fill="${color}" opacity=".85"/></svg>`,
+    className: '', iconSize:[8,8], iconAnchor:[4,4], popupAnchor:[0,-6],
+  });
+  const pinIcon = color => L.divIcon({
+    html: `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="24" viewBox="0 0 20 26"><path d="M10 0C4.477 0 0 4.477 0 10c0 7 10 16 10 16S20 17 20 10C20 4.477 15.523 0 10 0z" fill="${color}" opacity=".9"/><circle cx="10" cy="10" r="4" fill="white" opacity=".9"/></svg>`,
+    className: '', iconSize:[18,24], iconAnchor:[9,24], popupAnchor:[0,-24],
+  });
+
+  // Scatter N individual points around a centre with radius r (degrees)
+  function scatter(h) {
+    const popup = `<div style="font-family:Inter,sans-serif;min-width:170px">
+      <div style="font-size:12px;font-weight:700;color:${HIST_COLOR};margin-bottom:5px">${h.label}</div>
+      <div style="font-size:11px;color:#6b7280;margin-bottom:2px">Region: <span style="color:#94a3b8">${h.region}</span></div>
+      <div style="font-size:11px;color:#6b7280;margin-bottom:2px">Period: <span style="color:#94a3b8">${h.period}</span></div>
+      <div style="font-size:11px;color:#6b7280">Source pool: <span style="color:#94a3b8;font-weight:600">${h.cases.toLocaleString()} cases</span></div>
+      <div style="margin-top:7px;padding-top:7px;border-top:1px solid rgba(255,255,255,.07);font-size:10px;color:#4b5563;font-style:italic">Historical literature data</div>
+    </div>`;
+    for (let i = 0; i < h.cases; i++) {
+      const angle = Math.random() * 2 * Math.PI;
+      const dist  = Math.sqrt(Math.random()) * h.r;
+      const lat   = h.lat + dist * Math.sin(angle);
+      const lng   = h.lng + dist * Math.cos(angle);
+      clusters.addLayer(L.marker([lat, lng], { icon: dotIcon(HIST_COLOR) }).bindPopup(popup, { maxWidth:230 }));
+    }
+  }
+
+  HISTORICAL.forEach(scatter);
+
+  fetch(`${API_BASE}/api/cases/map`)
+    .then(r => r.json())
+    .then(({ data }) => {
+      let urgent=0, refer=0; const chwSet=new Set();
+      (data ?? []).forEach(c => {
+        if (c.triage==='urgent') urgent++;
+        if (c.triage==='refer') refer++;
+        if (c.chw_id) chwSet.add(c.chw_id);
+        if (!c.lat||!c.lng) return;
+        const chw = c.chws;
+        const chwName = chw?.name ?? `CHW ${(c.chw_id??'').slice(-4)}`;
+        const color = TRIAGE_COLOR[c.triage] ?? '#e84040';
+        const popup = `<div style="font-family:Inter,sans-serif;min-width:160px">
+          <div style="font-size:13px;font-weight:700;color:${color};margin-bottom:6px">Stage ${c.stage??'?'} — ${(c.triage??'').charAt(0).toUpperCase()+(c.triage??'').slice(1)}</div>
+          <div style="font-size:11px;color:#6b7280;margin-bottom:3px">Region: <span style="color:#94a3b8">${c.region??'—'}</span></div>
+          <div style="font-size:11px;color:#6b7280;margin-bottom:3px">Age: <span style="color:#94a3b8">${c.child_age_months?Math.round(c.child_age_months/12*10)/10+' yrs':'—'}</span></div>
+          <div style="margin-top:8px;padding-top:8px;border-top:1px solid rgba(255,255,255,.07);font-size:11px;color:#4b5563">Reported by <strong style="color:#60a5fa">${chwName}</strong></div>
+        </div>`;
+        clusters.addLayer(L.marker([c.lat,c.lng],{icon:pinIcon(color)}).bindPopup(popup,{maxWidth:220}));
+      });
+      if (urgent||refer||chwSet.size) {
+        document.getElementById('ms-urgent').textContent = urgent;
+        document.getElementById('ms-refer').textContent = refer;
+        document.getElementById('ms-chws').textContent = chwSet.size;
+      }
+    }).catch(() => {});
+})();
+</script>
+
 <script type="module">
 import * as THREE from 'https://esm.sh/three@0.158.0';
 import { GLTFLoader } from 'https://esm.sh/three@0.158.0/examples/jsm/loaders/GLTFLoader.js';

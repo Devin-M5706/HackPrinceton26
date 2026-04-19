@@ -32,7 +32,7 @@ Fields required:
 - urgent: boolean (true if immediate hospital referral is needed)"""
 
 payload = json.dumps({
-    "model": "moonshot/kimi-k2.5",
+    "model": "anthropic/claude-haiku-4-5-20251001",
     "messages": [
         {
             "role": "user",
@@ -108,7 +108,7 @@ Return ONLY a valid JSON object with these fields:
 - risk_factors: array of strings"""
 
 payload = json.dumps({
-    "model": "moonshot/kimi-k2-thinking",
+    "model": "anthropic/claude-haiku-4-5-20251001",
     "messages": [
         {
             "role": "system",
@@ -222,7 +222,7 @@ Return ONLY a valid JSON object with one field:
 - referral_note: string (the complete referral note, 3–5 sentences, plain text not markdown)"""
 
 payload = json.dumps({
-    "model": "moonshot/kimi-k2.5",
+    "model": "anthropic/claude-haiku-4-5-20251001",
     "messages": [{"role": "user", "content": note_prompt}],
     "max_tokens": 512
 }).encode()

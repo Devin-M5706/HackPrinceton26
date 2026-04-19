@@ -11,10 +11,15 @@
 
 import { Router, Request, Response } from 'express';
 import { requireAuth } from '../lib/auth';
-import { acquireVm, releaseVm } from '../lib/vmPool';
-import { runScript } from '../lib/dedalus';
-import { VISION_AGENT, CLINICAL_AGENT, REFERRAL_AGENT } from '../lib/agentScripts';
 import { supabase, scoreToTriage } from '../lib/supabase';
+import Dedalus from 'dedalus-labs';
+
+const AI_MODEL = 'anthropic/claude-haiku-4-5-20251001';
+let _ai: Dedalus | null = null;
+function getAi(): Dedalus {
+  if (!_ai) _ai = new Dedalus({ apiKey: process.env.DEDALUS_API_KEY! });
+  return _ai;
+}
 
 export const screenRouter = Router();
 
@@ -96,6 +101,12 @@ screenRouter.post('/', requireAuth, async (req: Request, res: Response) => {
   const lng = body.lng ?? 0;
   const useMock = process.env.MOCK_MODE === 'true';
 
+  const imageBytes = Buffer.from(body.image_b64, 'base64');
+  let imageMime = 'image/jpeg';
+  if (imageBytes[0] === 0x89 && imageBytes[1] === 0x50) imageMime = 'image/png';
+  else if (imageBytes[0] === 0x52 && imageBytes[1] === 0x49) imageMime = 'image/webp';
+  else if (imageBytes[0] === 0x47 && imageBytes[1] === 0x49) imageMime = 'image/gif';
+
   let visionResult: VisionResult;
   let clinicalResult: ClinicalResult;
   let referralResult: ReferralResult;
@@ -106,76 +117,71 @@ screenRouter.post('/', requireAuth, async (req: Request, res: Response) => {
     referralResult = MOCK_REFERRAL;
   } else {
     try {
-      // ── VM 1: vision ────────────────────────────────────────────────────────
-      const vm1 = await acquireVm();
-      try {
-        const raw = await runScript({
-          machineId: vm1.machineId,
-          script: VISION_AGENT,
-          env: {
-            IMAGE_B64: body.image_b64,
-            DEDALUS_API_KEY: process.env.DEDALUS_API_KEY!,
-          },
-          timeoutMs: 45_000,
-        });
-        visionResult = JSON.parse(raw) as VisionResult;
-      } catch (err) {
-        console.error('[screen] Vision VM failed:', err);
-        visionResult = { ...MOCK_VISION, error: String(err) };
-      } finally {
-        await releaseVm(vm1.machineId, vm1.fromPool);
-      }
-
-      // ── VM 2: clinical ──────────────────────────────────────────────────────
-      const vm2 = await acquireVm();
-      try {
-        const raw = await runScript({
-          machineId: vm2.machineId,
-          script: CLINICAL_AGENT,
-          env: {
-            VISION_JSON: JSON.stringify(visionResult),
-            CHILD_META_JSON: JSON.stringify(body.child_meta),
-            DEDALUS_API_KEY: process.env.DEDALUS_API_KEY!,
-          },
-          timeoutMs: 70_000,
-        });
-        clinicalResult = JSON.parse(raw) as ClinicalResult;
-      } catch (err) {
-        console.error('[screen] Clinical VM failed:', err);
-        clinicalResult = { ...MOCK_CLINICAL, error: String(err) };
-      } finally {
-        await releaseVm(vm2.machineId, vm2.fromPool);
-      }
-
-      // ── VM 3: referral ──────────────────────────────────────────────────────
-      const vm3 = await acquireVm();
-      try {
-        const raw = await runScript({
-          machineId: vm3.machineId,
-          script: REFERRAL_AGENT,
-          env: {
-            CLINICAL_JSON: JSON.stringify(clinicalResult),
-            CHW_REGION: chw.region,
-            CHW_LANGUAGE: chw.language,
-            CHW_LAT: String(lat),
-            CHW_LNG: String(lng),
-            DEDALUS_API_KEY: process.env.DEDALUS_API_KEY!,
-            SUPABASE_URL: process.env.SUPABASE_URL!,
-            SUPABASE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY!,
-          },
-          timeoutMs: 35_000,
-        });
-        referralResult = JSON.parse(raw) as ReferralResult;
-      } catch (err) {
-        console.error('[screen] Referral VM failed:', err);
-        referralResult = MOCK_REFERRAL;
-      } finally {
-        await releaseVm(vm3.machineId, vm3.fromPool);
-      }
+      // ── Step 1: Vision analysis ─────────────────────────────────────────────
+      const visionRaw = await getAi().chat.completions.create({
+        model: AI_MODEL,
+        messages: [{
+          role: 'user',
+          content: [
+            { type: 'image_url', image_url: { url: `data:${imageMime};base64,${body.image_b64}` } },
+            { type: 'text', text: `You are an expert clinician trained in WHO Noma (cancrum oris) staging. Examine the wound in this image and return ONLY a valid JSON object — no markdown, no prose.\n\nFields required:\n- stage: integer 1–5 (WHO Noma stage; 1=prodromal, 5=healed/sequela)\n- risk_score: integer 0–100\n- confidence: float 0.0–1.0\n- findings: array of short strings describing key visual observations\n- urgent: boolean (true if immediate hospital referral is needed)` },
+          ],
+        }],
+        max_tokens: 512,
+      });
+      const visionContent = visionRaw.choices[0].message.content ?? '';
+      visionResult = JSON.parse(visionContent.slice(visionContent.indexOf('{'), visionContent.lastIndexOf('}') + 1)) as VisionResult;
     } catch (err) {
-      console.error('[screen] VM pipeline unavailable — falling back to mock:', err);
-      visionResult = MOCK_VISION;
-      clinicalResult = MOCK_CLINICAL;
+      console.error('[screen] Vision step failed:', err);
+      visionResult = { ...MOCK_VISION, error: String(err) };
+    }
+
+    try {
+      // ── Step 2: Clinical reasoning ──────────────────────────────────────────
+      const clinicalRaw = await getAi().chat.completions.create({
+        model: AI_MODEL,
+        messages: [
+          { role: 'system', content: 'You are a WHO-trained Noma specialist providing clinical decision support for community health workers in sub-Saharan Africa. Always err on the side of caution.' },
+          { role: 'user', content: `Vision result: ${JSON.stringify(visionResult)}\nChild: age ${body.child_meta.age_months}mo, ${body.child_meta.sex}, symptoms: ${body.child_meta.symptoms ?? 'none'}, nutrition: ${body.child_meta.nutrition_status ?? 'unknown'}\n\nReturn ONLY valid JSON with: who_stage_confirmed (int), clinical_note (string), recommendation (string), triage ("urgent"|"refer"|"monitor"|"healthy"), risk_factors (string[])` },
+        ],
+        max_tokens: 1024,
+      });
+      const clinContent = clinicalRaw.choices[0].message.content ?? '';
+      clinicalResult = JSON.parse(clinContent.slice(clinContent.indexOf('{'), clinContent.lastIndexOf('}') + 1)) as ClinicalResult;
+    } catch (err) {
+      console.error('[screen] Clinical step failed:', err);
+      clinicalResult = { ...MOCK_CLINICAL, error: String(err) };
+    }
+
+    try {
+      // ── Step 3: Referral — nearest clinic from Supabase + AI note ──────────
+      const { data: clinics } = await supabase().from('clinics').select('*').eq('noma_capable', true);
+      const haversine = (a: number, b: number, c: number, d: number) => {
+        const R = 6371, dLat = (c - a) * Math.PI / 180, dLng = (d - b) * Math.PI / 180;
+        const x = Math.sin(dLat/2)**2 + Math.cos(a*Math.PI/180)*Math.cos(c*Math.PI/180)*Math.sin(dLng/2)**2;
+        return R * 2 * Math.atan2(Math.sqrt(x), Math.sqrt(1 - x));
+      };
+      const nearest = (clinics ?? []).reduce((best: any, c: any) => {
+        const d = haversine(lat, lng, c.lat, c.lng);
+        return !best || d < best.dist ? { ...c, dist: d } : best;
+      }, null);
+
+      const noteRaw = await getAi().chat.completions.create({
+        model: AI_MODEL,
+        messages: [{ role: 'user', content: `Write a brief referral note in ${chw.language} for a CHW to give to a clinic.\nClinical context: ${JSON.stringify(clinicalResult)}\nFacility: ${nearest?.name ?? 'nearest health centre'}\nReturn ONLY JSON: { "referral_note": "..." }` }],
+        max_tokens: 512,
+      });
+      const noteContent = noteRaw.choices[0].message.content ?? '';
+      const noteObj = JSON.parse(noteContent.slice(noteContent.indexOf('{'), noteContent.lastIndexOf('}') + 1));
+      referralResult = {
+        clinic_id: nearest?.id ?? null,
+        clinic_name: nearest?.name ?? 'Nearest Health Centre',
+        distance_km: nearest ? Math.round(nearest.dist * 10) / 10 : 0,
+        contact: nearest?.contact ?? 'N/A',
+        referral_note: noteObj.referral_note,
+      };
+    } catch (err) {
+      console.error('[screen] Referral step failed:', err);
       referralResult = MOCK_REFERRAL;
     }
   }

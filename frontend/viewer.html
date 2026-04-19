@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>NomaAlert — 3D Lesion Viewer</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:100%;height:100%;background:#050810;overflow:hidden;font-family:'Inter',system-ui,sans-serif;color:#e6eaf2}
+#canvas-wrap{position:fixed;inset:0}
+#viewer-canvas{width:100%;height:100%;display:block}
+
+/* Back button */
+.back-btn{position:fixed;top:20px;left:20px;z-index:10;display:flex;align-items:center;gap:8px;background:rgba(13,17,23,.8);border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:9px 16px;color:#a0aec0;font-size:13px;font-weight:500;cursor:pointer;backdrop-filter:blur(8px);text-decoration:none;transition:all .15s}
+.back-btn:hover{color:#fff;border-color:rgba(255,255,255,.2)}
+.back-btn svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+
+/* Result overlay */
+.result-panel{position:fixed;bottom:0;left:0;right:0;z-index:10;background:linear-gradient(transparent, rgba(5,8,16,.97) 30%);padding:40px 32px 32px;pointer-events:none}
+.result-inner{max-width:680px;margin:0 auto}
+.result-stage{font-size:22px;font-weight:700;margin-bottom:8px;letter-spacing:-.3px}
+.result-note{font-size:13px;color:#94a3b8;line-height:1.8;margin-bottom:10px;max-width:600px}
+.result-clinic{font-size:12px;color:#f87171;margin-bottom:16px}
+.result-actions{display:flex;gap:10px;pointer-events:all}
+.btn-copy{background:rgba(59,130,246,.15);border:1px solid rgba(59,130,246,.3);color:#60a5fa;font-size:12px;font-weight:500;padding:8px 18px;border-radius:6px;cursor:pointer;font-family:inherit;transition:all .15s}
+.btn-copy:hover{background:rgba(59,130,246,.25)}
+.btn-back-screen{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);color:#94a3b8;font-size:12px;font-weight:500;padding:8px 18px;border-radius:6px;cursor:pointer;font-family:inherit;transition:all .15s;text-decoration:none}
+.btn-back-screen:hover{color:#fff;border-color:rgba(255,255,255,.2)}
+
+/* Stage badge top-right */
+.stage-badge{position:fixed;top:20px;right:20px;z-index:10;background:#0d1117;border:1px solid rgba(255,255,255,.15);border-radius:8px;padding:12px 18px;text-align:right}
+.stage-badge-label{font-size:10px;color:#6b7280;text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px}
+.stage-badge-val{font-size:18px;font-weight:700}
+
+/* Hint */
+.hint{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);font-size:12px;color:#4b5563;letter-spacing:.5px;pointer-events:none;text-transform:uppercase}
+</style>
+</head>
+<body>
+
+<div id="canvas-wrap">
+  <canvas id="viewer-canvas"></canvas>
+</div>
+
+<a class="back-btn" href="index.html">
+  <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+  Back
+</a>
+
+<div class="stage-badge" id="stage-badge">
+  <div class="stage-badge-label">WHO Stage</div>
+  <div class="stage-badge-val" id="badge-val">—</div>
+</div>
+
+<div class="result-panel">
+  <div class="result-inner">
+    <div class="result-stage" id="result-stage">—</div>
+    <div class="result-note" id="result-note">—</div>
+    <div class="result-clinic" id="result-clinic"></div>
+    <div class="result-actions">
+      <button class="btn-copy" id="copy-btn" onclick="copyNote()">Copy referral note</button>
+      <a class="btn-back-screen" href="index.html">New screening</a>
+    </div>
+  </div>
+</div>
+
+<div class="hint" id="hint">Drag to rotate · Scroll to zoom</div>
+
+<script type="module">
+import * as THREE from 'https://esm.sh/three@0.158.0';
+import { GLTFLoader } from 'https://esm.sh/three@0.158.0/examples/jsm/loaders/GLTFLoader.js';
+import { OrbitControls } from 'https://esm.sh/three@0.158.0/examples/jsm/controls/OrbitControls.js';
+
+const DAMAGE_CFG = {
+  0: { mouthColor:0xffb8a0, emissive:0x000000, emissiveInt:0.0, roughness:0.65, lesionColor:null },
+  1: { mouthColor:0xff9090, emissive:0x7a0000, emissiveInt:0.25, roughness:0.72, lesionColor:0xff3030 },
+  2: { mouthColor:0xd96040, emissive:0x8B3000, emissiveInt:0.35, roughness:0.80, lesionColor:0xff6020 },
+  3: { mouthColor:0x8B3030, emissive:0x3a0000, emissiveInt:0.55, roughness:0.90, lesionColor:0xcc1010 },
+  4: { mouthColor:0x4a1a1a, emissive:0x1a0000, emissiveInt:0.65, roughness:0.96, lesionColor:0x880000 },
+  5: { mouthColor:0xd4a090, emissive:0x000000, emissiveInt:0.0,  roughness:0.85, lesionColor:null },
+};
+
+const TRIAGE_COLOR = { urgent:'#e84040', refer:'#f59e0b', monitor:'#3b82f6', healthy:'#22c55e' };
+
+// Load result data from sessionStorage
+const raw = sessionStorage.getItem('noma_result');
+if (!raw) { window.location = 'index.html'; }
+const result = JSON.parse(raw);
+const stage = Math.min(result.stage ?? 0, 5);
+const findings = result.findings ?? [];
+
+// Populate overlay
+const stageLabel = `Stage ${result.stage} — ${(result.triage||'').charAt(0).toUpperCase()+(result.triage||'').slice(1)}`;
+document.getElementById('result-stage').textContent = stageLabel;
+document.getElementById('result-stage').style.color = TRIAGE_COLOR[result.triage] ?? '#e84040';
+document.getElementById('badge-val').textContent = `${result.stage ?? '—'}`;
+document.getElementById('badge-val').style.color = TRIAGE_COLOR[result.triage] ?? '#e84040';
+document.getElementById('result-note').textContent = result.clinical_note ?? '';
+if (result.clinic?.name) {
+  document.getElementById('result-clinic').textContent =
+    `Nearest clinic: ${result.clinic.name} · ${result.clinic.distance_km} km · ${result.clinic.contact}`;
+}
+
+window.copyNote = function() {
+  navigator.clipboard.writeText(result.referral_note ?? '').then(() => {
+    const btn = document.getElementById('copy-btn');
+    btn.textContent = 'Copied ✓';
+    setTimeout(() => { btn.textContent = 'Copy referral note'; }, 2000);
+  });
+};
+
+// Three.js setup
+const canvas = document.getElementById('viewer-canvas');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.3;
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x050810);
+scene.fog = new THREE.FogExp2(0x050810, 6);
+
+const camera = new THREE.PerspectiveCamera(38, 1, 0.001, 100);
+camera.position.set(0, 0.02, 0.32);
+
+// Lights
+scene.add(new THREE.AmbientLight(0xffffff, 0.5));
+const key = new THREE.DirectionalLight(0xfff5ee, 1.6);
+key.position.set(1.5, 2, 2); scene.add(key);
+const fill = new THREE.DirectionalLight(0x6080ff, 0.35);
+fill.position.set(-2, 0.5, 1); scene.add(fill);
+const rim = new THREE.DirectionalLight(0xffffff, 0.25);
+rim.position.set(0, -1, -2); scene.add(rim);
+
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true; controls.dampingFactor = 0.06;
+controls.minDistance = 0.08; controls.maxDistance = 1.2;
+controls.autoRotate = true; controls.autoRotateSpeed = 0.6;
+controls.addEventListener('start', () => { controls.autoRotate = false; document.getElementById('hint').style.display='none'; });
+
+const cfg = DAMAGE_CFG[stage];
+let lesionLight = null;
+if (cfg.lesionColor && stage > 0) {
+  lesionLight = new THREE.PointLight(cfg.lesionColor, 3, 0.18);
+  const isLeft = findings.some(f => /left/i.test(f));
+  lesionLight.position.set(isLeft ? -0.05 : 0.05, 0.01, 0.05);
+  scene.add(lesionLight);
+}
+
+new GLTFLoader().load('models/mouth/scene.gltf', gltf => {
+  const model = gltf.scene;
+  const box = new THREE.Box3().setFromObject(model);
+  const center = box.getCenter(new THREE.Vector3());
+  const size = box.getSize(new THREE.Vector3());
+  const scale = 0.20 / Math.max(size.x, size.y, size.z);
+  model.scale.setScalar(scale);
+  model.position.sub(center.multiplyScalar(scale));
+
+  model.traverse(child => {
+    if (!child.isMesh) return;
+    if (child.material?.name === 'mouth') {
+      child.material = child.material.clone();
+      child.material.color.setHex(cfg.mouthColor);
+      child.material.emissive.setHex(cfg.emissive);
+      child.material.emissiveIntensity = cfg.emissiveInt;
+      child.material.roughness = cfg.roughness;
+      if (stage >= 2 && stage <= 4) {
+        child.userData.pulseBase = cfg.emissiveInt;
+        child.userData.pulseMat = child.material;
+      }
+    }
+  });
+  scene.add(model);
+
+  function resize() {
+    const w = window.innerWidth, h = window.innerHeight;
+    camera.aspect = w / h;
+    camera.updateProjectionMatrix();
+    renderer.setSize(w, h);
+  }
+  resize();
+  window.addEventListener('resize', resize);
+
+  let t = 0;
+  (function animate() {
+    requestAnimationFrame(animate);
+    t += 0.016;
+    controls.update();
+    if (lesionLight && stage >= 2) lesionLight.intensity = 2.5 + Math.sin(t * 2.2) * 1.0;
+    model.traverse(c => {
+      if (c.userData.pulseMat)
+        c.userData.pulseMat.emissiveIntensity = c.userData.pulseBase + Math.sin(t * 1.6) * 0.15;
+    });
+    renderer.render(scene, camera);
+  })();
+});
+</script>
+</body>
+</html>

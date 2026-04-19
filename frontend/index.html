@@ -3,448 +3,292 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>NomaAlert — AI-Powered Early Detection for Noma Disease</title>
+<title>NomaAlert — AI Early Detection</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
-<link href="https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,400;0,700;1,300;1,400&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --navy:#0B2545;--navy2:#134074;--navy3:#1B5299;
-  --slate:#4A5568;--slate2:#718096;--slate3:#A0AEC0;
-  --offwhite:#F7F8FA;--white:#FFFFFF;
-  --border:#E2E8F0;--border2:#CBD5E0;
-  --red:#C53030;--red-bg:#FFF5F5;--red-bd:#FED7D7;
-  --amber:#92600A;--amber-bg:#FFFBEB;--amber-bd:#FDE68A;
-  --green:#1A5C3A;--green-bg:#F0FFF4;--green-bd:#C6F6D5;
-  --blue:#1A56A0;--blue-bg:#EBF8FF;--blue-bd:#BEE3F8;
-  --teal:#234E52;--teal-bg:#E6FFFA;--teal-bd:#B2F5EA;
-  --wa:#25D366;--wa-dark:#128C7E;--wa-light:#DCF8C6;--wa-bg:#ECE5DD;
+  --bg:#07090f;
+  --bg2:#0d1117;
+  --bg3:#161b26;
+  --border:rgba(255,255,255,.07);
+  --border2:rgba(255,255,255,.12);
+  --text:#e6eaf2;
+  --muted:#6b7280;
+  --red:#e84040;
+  --red2:#ff6b6b;
+  --blue:#3b82f6;
+  --blue2:#60a5fa;
+  --green:#22c55e;
+  --amber:#f59e0b;
 }
 html{scroll-behavior:smooth}
-body{font-family:'Inter',system-ui,sans-serif;color:#1A202C;line-height:1.6;background:#fff}
-.container{max-width:1100px;margin:0 auto;padding:0 40px}
-.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)}
+body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--text);line-height:1.6;min-height:100vh}
 
-/* NAV */
-.nav{background:var(--navy);position:sticky;top:0;z-index:200;border-bottom:1px solid rgba(255,255,255,.06)}
-.nav-inner{display:flex;align-items:center;justify-content:space-between;height:64px}
-.nav-brand{display:flex;align-items:center;gap:12px;text-decoration:none}
-.nav-logomark{width:34px;height:34px;background:#fff;border-radius:6px;display:flex;align-items:center;justify-content:center}
-.nav-logomark svg{width:20px;height:20px}
-.nav-name{color:#fff;font-size:15px;font-weight:600;letter-spacing:.2px}
-.nav-subtitle{color:#718096;font-size:10px;font-weight:400;margin-top:1px}
-.nav-links{display:flex;gap:0}
-.nav-link{color:#A0AEC0;font-size:13px;font-weight:400;padding:8px 16px;cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;text-decoration:none}
-.nav-link:hover,.nav-link.active{color:#fff;border-bottom-color:#90CDF4}
-.nav-cta{display:flex;align-items:center;gap:10px}
-.nav-alert-btn{display:flex;align-items:center;gap:6px;background:rgba(197,48,48,.85);border:1px solid #FC8181;color:#fff;font-size:11px;font-weight:600;padding:6px 14px;border-radius:4px;cursor:pointer}
-.btn-wa-nav{display:flex;align-items:center;gap:6px;background:var(--wa);color:#fff;font-size:11px;font-weight:600;padding:6px 14px;border-radius:4px;cursor:pointer;text-decoration:none;transition:background .15s}
-.btn-wa-nav:hover{background:var(--wa-dark)}
-.btn-wa-nav svg{width:14px;height:14px;fill:#fff;flex-shrink:0}
-.pulse{width:7px;height:7px;border-radius:50%;background:#fff;animation:pulse 1.4s infinite}
-@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.35;transform:scale(.65)}}
-.nav-login{color:#A0AEC0;font-size:12px;font-weight:500;padding:6px 14px;border:1px solid #4A5568;border-radius:4px;cursor:pointer;transition:all .15s}
-.nav-login:hover{color:#fff;border-color:#718096}
+/* ── NAV ─────────────────────────────────────────────────────────────────── */
+.nav{position:fixed;top:0;left:0;right:0;z-index:100;height:56px;background:rgba(7,9,15,.85);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 32px;gap:16px}
+.nav-brand{display:flex;align-items:center;gap:10px;text-decoration:none;margin-right:auto}
+.nav-logo{width:30px;height:30px;background:var(--red);border-radius:6px;display:flex;align-items:center;justify-content:center}
+.nav-logo svg{width:16px;height:16px;stroke:#fff;fill:none;stroke-width:2.5;stroke-linecap:round}
+.nav-name{font-size:14px;font-weight:600;color:#fff;letter-spacing:.3px}
+.nav-sub{font-size:10px;color:var(--muted);letter-spacing:.5px;text-transform:uppercase}
+.alert-pill{display:flex;align-items:center;gap:6px;background:rgba(232,64,64,.15);border:1px solid rgba(232,64,64,.3);color:var(--red2);font-size:11px;font-weight:500;padding:4px 12px;border-radius:20px;cursor:default}
+.pulse{width:6px;height:6px;border-radius:50%;background:var(--red2);animation:pulse 1.5s infinite}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.3;transform:scale(.6)}}
+.nav-login{background:transparent;border:1px solid var(--border2);color:var(--text);font-size:12px;font-weight:500;padding:6px 16px;border-radius:5px;cursor:pointer;transition:all .15s;font-family:inherit}
+.nav-login:hover{border-color:#3b82f6;color:#60a5fa}
 
-/* HERO */
-.hero{background:var(--navy);padding:80px 0 0}
-.hero-inner{display:grid;grid-template-columns:1fr 440px;gap:60px;align-items:start}
-.hero-kicker{display:inline-flex;align-items:center;gap:8px;background:rgba(144,205,244,.1);border:1px solid rgba(144,205,244,.2);color:#90CDF4;font-size:11px;font-weight:500;padding:5px 12px;border-radius:20px;letter-spacing:.8px;text-transform:uppercase;margin-bottom:20px}
-.hero h1{font-family:'Merriweather',serif;font-size:36px;color:#fff;font-weight:700;line-height:1.25;margin-bottom:20px}
-.hero h1 em{color:#90CDF4;font-style:normal}
-.hero-lead{font-size:15px;color:#A0AEC0;line-height:1.8;margin-bottom:12px}
-.hero-fact{display:flex;align-items:flex-start;gap:10px;margin-top:24px;padding:16px;background:rgba(197,48,48,.12);border:1px solid rgba(197,48,48,.3);border-radius:6px}
-.hero-fact p{font-size:13px;color:#FEB2B2;line-height:1.6}
-.hero-fact strong{color:#fff}
-.hero-actions{display:flex;gap:12px;margin-top:28px;flex-wrap:wrap;align-items:center}
-.btn-hero{background:#1A56A0;color:#fff;font-size:13px;font-weight:600;padding:11px 24px;border-radius:5px;border:none;cursor:pointer;transition:background .15s;text-decoration:none;display:inline-block}
-.btn-hero:hover{background:#1A4580}
-.btn-ghost{background:transparent;color:#A0AEC0;font-size:13px;font-weight:500;padding:11px 24px;border-radius:5px;border:1px solid #4A5568;cursor:pointer;transition:all .15s;text-decoration:none;display:inline-block}
-.btn-ghost:hover{color:#fff;border-color:#718096}
-.btn-wa-hero{display:inline-flex;align-items:center;gap:8px;background:var(--wa);color:#fff;font-size:13px;font-weight:600;padding:11px 20px;border-radius:5px;border:none;cursor:pointer;text-decoration:none;transition:background .15s}
-.btn-wa-hero:hover{background:var(--wa-dark)}
-.btn-wa-hero svg{width:16px;height:16px;fill:#fff;flex-shrink:0}
-.hero-stat-strip{display:flex;gap:0;margin-top:48px;border-top:1px solid rgba(255,255,255,.08)}
-.hstat{flex:1;padding:24px 0;border-right:1px solid rgba(255,255,255,.08)}
-.hstat:last-child{border-right:none}
-.hstat-num{font-size:26px;font-weight:600;color:#fff}
-.hstat-lbl{font-size:11px;color:#718096;margin-top:3px;line-height:1.4}
-.hstat-source{font-size:9px;color:#4A5568;margin-top:4px}
+/* ── LAYOUT ──────────────────────────────────────────────────────────────── */
+.page{min-height:100vh;padding-top:56px;display:grid;grid-template-columns:1fr 440px;gap:0;max-width:1200px;margin:0 auto;padding-left:48px;padding-right:48px}
+@media(max-width:900px){.page{grid-template-columns:1fr;padding-left:20px;padding-right:20px}}
 
-/* UPLOAD CARD */
-.upload-card{background:#fff;border-radius:10px;border:1px solid var(--border);overflow:hidden;margin-bottom:40px}
-.uc-head{background:var(--navy2);padding:16px 20px}
-.uc-head-title{color:#fff;font-size:14px;font-weight:600}
-.uc-head-sub{color:#90CDF4;font-size:11px;margin-top:3px}
-.uc-body{padding:20px}
-.form-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
+/* ── HERO ────────────────────────────────────────────────────────────────── */
+.hero{padding:72px 48px 72px 0;display:flex;flex-direction:column;justify-content:center}
+.hero-tag{display:inline-flex;align-items:center;gap:7px;font-size:10px;font-weight:600;letter-spacing:1.2px;text-transform:uppercase;color:var(--muted);margin-bottom:28px}
+.hero-tag span{width:18px;height:1px;background:var(--muted)}
+.hero-title{font-size:clamp(28px,3.5vw,44px);font-weight:700;line-height:1.15;color:#fff;margin-bottom:20px;letter-spacing:-.5px}
+.hero-title em{color:var(--red2);font-style:normal}
+.hero-body{font-size:15px;color:var(--muted);line-height:1.8;max-width:480px;margin-bottom:40px}
+.hero-body strong{color:var(--text)}
+.stats{display:flex;gap:32px;flex-wrap:wrap}
+.stat{display:flex;flex-direction:column}
+.stat-num{font-size:26px;font-weight:700;color:#fff;letter-spacing:-.5px;line-height:1}
+.stat-num.red{color:var(--red2)}
+.stat-num.green{color:var(--green)}
+.stat-lbl{font-size:11px;color:var(--muted);margin-top:4px;line-height:1.4}
+.stat-divider{width:1px;background:var(--border);align-self:stretch;margin:4px 0}
+
+/* ── SCREENING PANEL ─────────────────────────────────────────────────────── */
+.panel-wrap{padding:72px 0 72px 48px;display:flex;align-items:center}
+@media(max-width:900px){.panel-wrap{padding:0 0 48px}}
+.panel{background:var(--bg2);border:1px solid var(--border2);border-radius:12px;overflow:hidden;width:100%}
+.panel-head{background:var(--bg3);padding:16px 20px;border-bottom:1px solid var(--border)}
+.panel-title{font-size:13px;font-weight:600;color:#fff}
+.panel-sub{font-size:11px;color:var(--muted);margin-top:2px}
+.panel-body{padding:20px}
+.frow{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
 .fld{display:flex;flex-direction:column;gap:5px}
-.fld label{font-size:10px;font-weight:600;color:var(--slate2);text-transform:uppercase;letter-spacing:.7px}
-.fld input,.fld select,.fld textarea{border:1px solid var(--border2);border-radius:5px;padding:8px 10px;font-size:12px;color:#2D3748;font-family:inherit;outline:none;transition:border .15s;background:#fff}
+.fld label{font-size:11px;font-weight:500;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
+.fld input,.fld select,.fld textarea{background:var(--bg);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-size:13px;padding:8px 10px;font-family:inherit;transition:border-color .15s;outline:none}
 .fld input:focus,.fld select:focus,.fld textarea:focus{border-color:var(--blue)}
-.fld textarea{resize:none;height:56px;line-height:1.5}
-.upload-zone{border:1.5px dashed var(--border2);border-radius:7px;padding:22px;text-align:center;cursor:pointer;transition:all .2s;background:var(--offwhite);margin-top:10px}
-.upload-zone:hover{border-color:var(--blue);background:var(--blue-bg)}
-.uz-icon{width:44px;height:44px;background:var(--blue-bg);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 10px}
-.uz-title{font-size:13px;font-weight:600;color:#2D3748;margin-bottom:3px}
-.uz-sub{font-size:11px;color:var(--slate3)}
-.uz-btn{margin-top:12px;background:var(--navy);color:#fff;font-size:12px;font-weight:500;padding:7px 16px;border-radius:4px;border:none;cursor:pointer}
+.fld select option{background:var(--bg)}
+.fld textarea{resize:vertical;min-height:60px}
+.fld{margin-bottom:10px}
+.upload-zone{border:1.5px dashed var(--border2);border-radius:8px;padding:24px;text-align:center;cursor:pointer;transition:border-color .15s;margin-top:4px}
+.upload-zone:hover{border-color:var(--blue2)}
+.uz-icon{margin-bottom:8px}
+.uz-icon svg{stroke:var(--blue2)}
+.uz-title{font-size:13px;font-weight:500;color:var(--text)}
+.uz-sub{font-size:11px;color:var(--muted);margin-top:3px}
+.uz-btn{margin-top:10px;background:var(--bg3);border:1px solid var(--border2);color:var(--text);font-size:12px;font-weight:500;padding:6px 16px;border-radius:5px;cursor:pointer;font-family:inherit}
 .preview-wrap{display:none;margin-top:12px}
-.preview-img{width:100%;height:120px;object-fit:contain;border-radius:6px;background:var(--offwhite);border:1px solid var(--border)}
-.analyze-btn{width:100%;background:var(--navy);color:#fff;font-size:13px;font-weight:600;padding:10px;border-radius:5px;border:none;cursor:pointer;margin-top:10px}
-.result-wrap{display:none;margin-top:12px;background:var(--red-bg);border:1px solid var(--red-bd);border-radius:7px;padding:14px}
-.result-stage{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.8px;color:var(--red);margin-bottom:5px}
-.result-text{font-size:12px;color:#742A2A;line-height:1.6;margin-bottom:10px}
-.sms-btn{width:100%;background:var(--red);color:#fff;font-size:12px;font-weight:600;padding:9px;border-radius:5px;border:none;cursor:pointer}
+.preview-img{width:100%;border-radius:6px;max-height:220px;object-fit:cover;border:1px solid var(--border)}
+.analyze-btn{width:100%;margin-top:10px;background:var(--blue);color:#fff;font-size:13px;font-weight:600;padding:10px;border-radius:6px;border:none;cursor:pointer;font-family:inherit;transition:background .15s}
+.analyze-btn:hover:not(:disabled){background:#2563eb}
+.analyze-btn:disabled{opacity:.5;cursor:not-allowed}
+.result-wrap{display:none;margin-top:12px;background:var(--bg);border:1px solid var(--border2);border-radius:8px;padding:14px}
+.result-stage{font-size:15px;font-weight:700;margin-bottom:6px}
+.result-text{font-size:12px;color:var(--muted);line-height:1.7;margin-bottom:8px}
+.result-clinic{font-size:11px;color:var(--red2);margin-bottom:8px}
+.sms-btn{background:transparent;border:1px solid var(--border2);color:var(--text);font-size:12px;font-weight:500;padding:7px 14px;border-radius:5px;cursor:pointer;font-family:inherit;width:100%;transition:all .15s}
+.sms-btn:hover{border-color:var(--blue2);color:var(--blue2)}
+#mouth3d-wrap{display:none;width:100%;height:380px;border-radius:8px;overflow:hidden;margin-bottom:10px;background:#050810;border:1px solid var(--border);position:relative}
+#mouth3d-canvas{width:100%!important;height:100%!important;display:block}
+.mouth3d-label{position:absolute;bottom:8px;left:10px;font-size:10px;color:var(--muted);pointer-events:none;letter-spacing:.5px;text-transform:uppercase}
 
-/* SECTION SHELL */
-.section{padding:80px 0}
-.section-alt{background:var(--offwhite)}
-.section-white{background:#fff}
-.section-navy{background:var(--navy)}
-.s-eyebrow{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:1.5px;color:var(--blue);margin-bottom:10px}
-.s-title{font-family:'Merriweather',serif;font-size:26px;font-weight:700;color:var(--navy);line-height:1.3;margin-bottom:14px}
-.s-title-white{color:#fff}
-.s-lead{font-size:15px;color:var(--slate);line-height:1.8;margin-bottom:0}
-.divider{height:1px;background:var(--border);margin:40px 0}
-
-/* DISEASE OVERVIEW */
-.disease-grid{display:grid;grid-template-columns:1fr 1fr;gap:56px;align-items:start;margin-top:40px}
-.disease-body p{font-size:14px;color:var(--slate);line-height:1.85;margin-bottom:16px}
-.disease-body p:last-child{margin-bottom:0}
-.disease-body strong{color:var(--navy);font-weight:600}
-.pull-quote{border-left:3px solid var(--blue);padding:14px 20px;margin:24px 0;background:var(--blue-bg);border-radius:0 6px 6px 0}
-.pull-quote p{font-family:'Merriweather',serif;font-size:14px;font-style:italic;color:var(--navy2);line-height:1.7}
-.pull-quote cite{font-size:11px;color:var(--slate2);font-style:normal;display:block;margin-top:6px}
-.fact-cards{display:flex;flex-direction:column;gap:12px}
-.fact-card{background:#fff;border:1px solid var(--border);border-radius:8px;padding:16px 18px;border-left:3px solid var(--navy3)}
-.fact-card-num{font-size:24px;font-weight:600;color:var(--navy);margin-bottom:3px}
-.fact-card-desc{font-size:12px;color:var(--slate2);line-height:1.55}
-.fact-card-source{font-size:10px;color:var(--slate3);margin-top:5px}
-
-/* STAGES */
-.stages-intro{max-width:680px;margin-bottom:40px}
-.stages-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
-.stage-card{background:#fff;border:1px solid var(--border);border-radius:8px;overflow:hidden}
-.stage-head{padding:16px;border-bottom:1px solid var(--border)}
-.stage-num-badge{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:5px}
-.stage-name{font-size:14px;font-weight:600;color:#2D3748}
-.stage-survival{font-size:11px;margin-top:4px;font-weight:500}
-.stage-body{padding:14px 16px}
-.stage-body p{font-size:12px;color:var(--slate);line-height:1.65}
-.stage-cost{margin-top:10px;font-size:11px;font-weight:600;padding:4px 8px;border-radius:4px;display:inline-block}
-.stage-s1 .stage-head{background:var(--green-bg);border-left:3px solid var(--green)}
-.stage-s1 .stage-num-badge,.stage-s1 .stage-survival{color:var(--green)}
-.stage-s1 .stage-cost{background:var(--green-bg);color:var(--green)}
-.stage-s2 .stage-head{background:var(--amber-bg);border-left:3px solid var(--amber)}
-.stage-s2 .stage-num-badge,.stage-s2 .stage-survival{color:var(--amber)}
-.stage-s2 .stage-cost{background:var(--amber-bg);color:var(--amber)}
-.stage-s3 .stage-head{background:#FFF7ED;border-left:3px solid #C05621}
-.stage-s3 .stage-num-badge,.stage-s3 .stage-survival{color:#C05621}
-.stage-s3 .stage-cost{background:#FFF7ED;color:#C05621}
-.stage-s4 .stage-head{background:var(--red-bg);border-left:3px solid var(--red)}
-.stage-s4 .stage-num-badge,.stage-s4 .stage-survival{color:var(--red)}
-.stage-s4 .stage-cost{background:var(--red-bg);color:var(--red)}
-
-/* PHOTO SLOTS */
-.photo-section{margin-top:48px}
-.photo-section-title{font-size:14px;font-weight:600;color:var(--navy);margin-bottom:4px}
-.photo-section-sub{font-size:12px;color:var(--slate2);margin-bottom:16px}
-.photo-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
-.photo-slot{border:1px solid var(--border);border-radius:8px;overflow:hidden;background:var(--offwhite);cursor:pointer;transition:border-color .15s}
-.photo-slot:hover{border-color:var(--blue)}
-.photo-placeholder{height:140px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px}
-.photo-placeholder span{font-size:11px;color:var(--slate3)}
-.photo-loaded{width:100%;height:140px;object-fit:cover;display:none}
-.photo-label{padding:9px 12px;border-top:1px solid var(--border);background:#fff}
-.photo-stage{font-size:11px;font-weight:600;color:#2D3748}
-.photo-tip{font-size:10px;color:var(--slate3);margin-top:1px}
-
-/* NEGLECT CARDS */
-.neglect-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;margin-top:40px}
-.neglect-card{background:#fff;border:1px solid var(--border);border-radius:8px;padding:24px}
-.neglect-icon{width:40px;height:40px;border-radius:8px;display:flex;align-items:center;justify-content:center;margin-bottom:14px}
-.neglect-title{font-size:14px;font-weight:600;color:var(--navy);margin-bottom:8px}
-.neglect-body{font-size:13px;color:var(--slate);line-height:1.7}
-
-/* HOW WE SOLVE */
-.solve-intro{display:grid;grid-template-columns:1fr 1fr;gap:56px;align-items:center;margin-bottom:60px}
-.solve-intro-text p{font-size:14px;color:var(--slate);line-height:1.85;margin-bottom:14px}
-.solve-intro-text p:last-child{margin-bottom:0}
-.tech-stack{display:flex;flex-direction:column;gap:10px}
-.tech-row{display:flex;align-items:center;gap:12px;padding:12px 14px;background:var(--offwhite);border-radius:7px;border:1px solid var(--border)}
-.tech-row-label{font-size:11px;font-weight:600;color:var(--slate2);text-transform:uppercase;letter-spacing:.6px;min-width:70px}
-.tech-row-val{font-size:12px;color:var(--navy);font-weight:500}
-.tech-row-desc{font-size:11px;color:var(--slate3);margin-left:auto}
-.pipeline-step{display:grid;grid-template-columns:56px 1fr;gap:20px;align-items:start;margin-bottom:32px;position:relative}
-.pipeline-step:not(:last-child)::after{content:'';position:absolute;left:27px;top:56px;width:1px;height:calc(100% - 24px);background:var(--border2)}
-.pipe-num{width:56px;height:56px;border-radius:50%;border:2px solid var(--border2);display:flex;align-items:center;justify-content:center;background:#fff;position:relative;z-index:1;flex-shrink:0}
-.pipe-num svg{width:22px;height:22px}
-.pipe-content-title{font-size:15px;font-weight:600;color:var(--navy);margin-bottom:5px;margin-top:14px}
-.pipe-content-body{font-size:13px;color:var(--slate);line-height:1.7}
-.pipe-badge{display:inline-block;font-size:10px;font-weight:600;padding:3px 8px;border-radius:4px;margin-top:8px;letter-spacing:.3px}
-.btn-wa-inline{display:inline-flex;align-items:center;gap:6px;background:var(--wa);color:#fff;font-size:12px;font-weight:600;padding:8px 16px;border-radius:5px;border:none;cursor:pointer;text-decoration:none;transition:background .15s;margin-top:10px}
-.btn-wa-inline:hover{background:var(--wa-dark)}
-.btn-wa-inline svg{width:14px;height:14px;fill:#fff}
-
-/* WHATSAPP SECTION */
-.wa-section{background:#fff;padding:80px 0}
-.wa-outer{display:grid;grid-template-columns:1fr 480px;gap:64px;align-items:start}
-.wa-intro .s-lead{margin-bottom:20px}
-.wa-intro p{font-size:14px;color:var(--slate);line-height:1.85;margin-bottom:14px}
-.wa-steps{display:flex;flex-direction:column;gap:12px;margin-top:24px}
-.wa-step{display:flex;gap:12px;align-items:flex-start}
-.wa-step-dot{width:24px;height:24px;border-radius:50%;background:var(--wa);display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px}
-.wa-step-dot svg{width:12px;height:12px;fill:#fff}
-.wa-step-text{font-size:13px;color:var(--slate);line-height:1.6}
-.wa-step-text strong{color:var(--navy);font-weight:600}
-.wa-cta-box{margin-top:28px;padding:20px;background:var(--green-bg);border:1px solid var(--green-bd);border-radius:8px}
-.wa-cta-box p{font-size:13px;color:var(--green);margin-bottom:14px;line-height:1.6}
-.wa-cta-box strong{font-weight:600}
-
-/* PHONE FRAME */
-.phone-frame{background:#1A1A2E;border-radius:36px;padding:14px;border:6px solid #2D2D44;box-shadow:0 20px 60px rgba(0,0,0,.25);max-width:300px;margin:0 auto}
-.phone-top-bar{display:flex;align-items:center;justify-content:space-between;padding:4px 8px 10px}
-.phone-time{color:#fff;font-size:10px;font-weight:600}
-.phone-icons{color:#fff;font-size:9px;display:flex;gap:6px}
-.wa-app{border-radius:22px;overflow:hidden;background:var(--wa-bg)}
-.wa-header{background:var(--wa-dark);padding:10px 14px;display:flex;align-items:center;gap:10px}
-.wa-avatar{width:32px;height:32px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;flex-shrink:0}
-.wa-avatar svg{width:18px;height:18px}
-.wa-header-name{color:#fff;font-size:12px;font-weight:600}
-.wa-header-status{color:rgba(255,255,255,.7);font-size:9px;margin-top:1px}
-.wa-chat{padding:10px 10px;display:flex;flex-direction:column;gap:6px;background:var(--wa-bg)}
-.wa-msg{max-width:82%;padding:7px 10px;border-radius:8px;font-size:10px;line-height:1.5;position:relative}
-.wa-msg-time{font-size:8px;opacity:.6;margin-top:3px;text-align:right}
-.wa-in{background:#fff;color:#1A202C;border-radius:0 8px 8px 8px;align-self:flex-start}
-.wa-out{background:var(--wa-light);color:#1A202C;border-radius:8px 8px 0 8px;align-self:flex-end}
-.wa-sys{background:rgba(0,0,0,.08);color:#555;border-radius:6px;align-self:center;font-size:9px;padding:4px 10px;text-align:center}
-.wa-img-bubble{background:var(--wa-light);border-radius:8px 8px 0 8px;align-self:flex-end;overflow:hidden;max-width:82%}
-.wa-img-thumb{width:140px;height:90px;background:linear-gradient(135deg,#e0e0e0,#c8c8c8);display:flex;align-items:center;justify-content:center}
-.wa-img-thumb svg{width:28px;height:28px;opacity:.4}
-.wa-img-caption{padding:5px 8px 4px;font-size:9px;color:#555}
-.wa-typing{background:#fff;border-radius:0 8px 8px 8px;align-self:flex-start;padding:8px 12px;display:flex;gap:3px;align-items:center}
-.wa-dot{width:5px;height:5px;border-radius:50%;background:#aaa}
-.wa-dot:nth-child(1){animation:wabounce .9s infinite 0s}
-.wa-dot:nth-child(2){animation:wabounce .9s infinite .15s}
-.wa-dot:nth-child(3){animation:wabounce .9s infinite .3s}
-@keyframes wabounce{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-4px)}}
-.wa-result-card{background:#fff;border-radius:0 8px 8px 8px;align-self:flex-start;overflow:hidden;max-width:90%;border:1px solid var(--border)}
-.wa-result-head{background:#C05621;padding:7px 10px}
-.wa-result-head-text{color:#fff;font-size:10px;font-weight:700}
-.wa-result-body{padding:8px 10px;font-size:9px;color:#2D3748;line-height:1.6}
-.wa-result-row{display:flex;justify-content:space-between;margin-bottom:3px}
-.wa-result-label{color:var(--slate2);font-weight:500}
-.wa-result-val{font-weight:600;color:#2D3748}
-.wa-referral-card{background:#fff;border-radius:0 8px 8px 8px;align-self:flex-start;overflow:hidden;max-width:95%;border:1px solid var(--green-bd)}
-.wa-referral-head{background:var(--green);padding:7px 10px}
-.wa-referral-head-text{color:#fff;font-size:10px;font-weight:700}
-.wa-referral-body{padding:8px 10px;font-size:9px;color:#2D3748;line-height:1.65}
-.wa-transport{background:var(--wa-light);border-radius:8px;align-self:flex-start;padding:7px 10px;max-width:88%;border:1px solid rgba(0,0,0,.06)}
-.wa-transport p{font-size:9px;color:#1A202C;line-height:1.6}
-
-/* PHOTON PARTNER STRIP */
-.photon-strip{background:var(--navy);padding:40px 0;border-top:1px solid rgba(255,255,255,.06);border-bottom:1px solid rgba(255,255,255,.06)}
-.photon-inner{display:flex;align-items:center;justify-content:space-between;gap:40px}
-.photon-label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:1.5px;color:#4A5568;flex-shrink:0}
-.photon-card{display:flex;align-items:center;gap:20px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:20px 28px;flex:1}
-.photon-logo-box{width:52px;height:52px;border-radius:10px;background:#fff;display:flex;align-items:center;justify-content:center;flex-shrink:0}
-.photon-logo-box svg{width:30px;height:30px}
-.photon-name{font-size:18px;font-weight:700;color:#fff;letter-spacing:-.3px}
-.photon-desc{font-size:13px;color:#A0AEC0;margin-top:2px;line-height:1.5}
-.photon-tags{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
-.photon-tag{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);color:#90CDF4;font-size:10px;font-weight:500;padding:3px 10px;border-radius:20px}
-.photon-stat-col{display:flex;flex-direction:column;gap:16px;flex-shrink:0}
-.photon-stat{text-align:right}
-.photon-stat-num{font-size:20px;font-weight:600;color:#fff}
-.photon-stat-lbl{font-size:10px;color:#4A5568;margin-top:1px}
-
-/* IMPACT */
-.impact-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;margin-top:40px}
-.impact-card{padding:28px;border-radius:8px;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.04)}
-.impact-card-num{font-size:32px;font-weight:600;color:#fff;margin-bottom:6px}
-.impact-card-title{font-size:13px;font-weight:600;color:#90CDF4;margin-bottom:8px}
-.impact-card-body{font-size:12px;color:#A0AEC0;line-height:1.65}
-
-/* CHW */
-.chw-grid{display:grid;grid-template-columns:1fr 1fr;gap:56px;align-items:center}
-.chw-steps{display:flex;flex-direction:column;gap:20px;margin-top:24px}
-.chw-step{display:flex;gap:16px;align-items:flex-start}
-.chw-step-num{width:30px;height:30px;border-radius:50%;background:var(--blue-bg);border:1.5px solid var(--blue-bd);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;color:var(--blue);flex-shrink:0}
-.chw-step-title{font-size:14px;font-weight:600;color:var(--navy);margin-bottom:4px}
-.chw-step-body{font-size:13px;color:var(--slate);line-height:1.6}
-.chw-note{background:var(--blue-bg);border:1px solid var(--blue-bd);border-radius:7px;padding:14px 16px;margin-top:20px}
-.chw-note p{font-size:12px;color:var(--blue);line-height:1.6}
-.phone-mock{background:var(--navy);border-radius:24px;padding:24px 18px;border:6px solid #2D3748;max-width:240px;margin:0 auto}
-.phone-notch{width:80px;height:16px;background:#2D3748;border-radius:8px;margin:0 auto 20px}
-.phone-screen-content{background:#fff;border-radius:10px;overflow:hidden}
-.phone-screen-head{background:var(--navy2);padding:12px 14px}
-.phone-screen-title{color:#fff;font-size:11px;font-weight:600}
-.phone-screen-sub{color:#90CDF4;font-size:9px;margin-top:1px}
-.phone-screen-body{padding:12px 14px}
-.phone-field{margin-bottom:8px}
-.phone-field-label{font-size:8px;font-weight:600;color:var(--slate2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px}
-.phone-field-val{background:var(--offwhite);border-radius:4px;padding:6px 8px;font-size:9px;color:#2D3748;border:1px solid var(--border)}
-.phone-upload-zone{border:1px dashed var(--border2);border-radius:6px;padding:14px;text-align:center;margin-top:6px;background:var(--offwhite)}
-.phone-upload-text{font-size:9px;color:var(--slate3)}
-.phone-submit{width:100%;background:var(--navy);color:#fff;font-size:9px;font-weight:600;padding:7px;border-radius:4px;border:none;margin-top:10px;cursor:pointer}
-
-/* WHO */
-.who-grid{display:grid;grid-template-columns:1fr 1fr;gap:56px}
-.who-text p{font-size:14px;color:var(--slate);line-height:1.85;margin-bottom:14px}
-.who-text p:last-child{margin-bottom:0}
-.team-card{background:var(--offwhite);border:1px solid var(--border);border-radius:8px;padding:24px}
-.team-card-title{font-size:14px;font-weight:600;color:var(--navy);margin-bottom:16px}
-.team-stack{display:flex;flex-direction:column;gap:10px}
-.team-layer{padding:10px 14px;background:#fff;border-radius:6px;border:1px solid var(--border);display:flex;align-items:center;gap:12px}
-.team-layer-icon{width:32px;height:32px;border-radius:5px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
-.team-layer-name{font-size:12px;font-weight:600;color:#2D3748}
-.team-layer-desc{font-size:11px;color:var(--slate2);margin-top:1px}
-.acknowledgement{margin-top:28px;padding:16px 18px;background:#fff;border-radius:8px;border:1px solid var(--border);border-left:3px solid var(--blue)}
-.acknowledgement p{font-size:12px;color:var(--slate);line-height:1.65}
-
-/* CTA BAND */
-.cta-band{background:var(--navy2);padding:64px 0;text-align:center}
-.cta-band h2{font-family:'Merriweather',serif;font-size:26px;color:#fff;font-weight:700;margin-bottom:12px}
-.cta-band p{font-size:14px;color:#A0AEC0;max-width:520px;margin:0 auto 28px;line-height:1.7}
-.cta-actions{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
-
-/* FOOTER */
-footer{background:var(--navy);padding:32px 0;border-top:1px solid rgba(255,255,255,.06)}
-.footer-inner{display:flex;align-items:center;justify-content:space-between}
-.footer-left p{font-size:12px;color:#4A5568;line-height:1.6}
-.footer-left p strong{color:#718096;font-weight:500}
-.footer-links{display:flex;gap:20px}
-.footer-link{font-size:12px;color:#4A5568;cursor:pointer;transition:color .15s;text-decoration:none}
-.footer-link:hover{color:#A0AEC0}
-.footer-wa{display:flex;align-items:center;gap:8px;background:rgba(37,211,102,.12);border:1px solid rgba(37,211,102,.25);color:var(--wa);font-size:12px;font-weight:600;padding:7px 16px;border-radius:5px;cursor:pointer;text-decoration:none;transition:background .15s}
-.footer-wa:hover{background:rgba(37,211,102,.2)}
-.footer-wa svg{width:14px;height:14px;fill:var(--wa);flex-shrink:0}
-.footer-disclaimer{margin-top:16px;padding-top:16px;border-top:1px solid rgba(255,255,255,.05)}
-.footer-disclaimer p{font-size:11px;color:#2D3748;text-align:center;line-height:1.5}
-
-/* LOGIN MODAL */
-.modal-overlay{display:none;position:fixed;inset:0;z-index:1000;background:rgba(11,37,69,.92);align-items:center;justify-content:center}
+/* ── LOGIN MODAL ─────────────────────────────────────────────────────────── */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);backdrop-filter:blur(4px);z-index:200;align-items:center;justify-content:center}
 .modal-overlay.open{display:flex}
-.login-modal{background:#fff;border-radius:16px;width:100%;max-width:400px;margin:20px;overflow:hidden}
-.login-modal-head{background:var(--navy);padding:28px 32px 24px;text-align:center}
-.login-modal-logo{width:48px;height:48px;background:#fff;border-radius:10px;display:flex;align-items:center;justify-content:center;margin:0 auto 14px}
-.login-modal-logo svg{width:26px;height:26px}
-.login-modal-title{color:#fff;font-family:'Merriweather',serif;font-size:20px;font-weight:700;line-height:1.3}
-.login-modal-sub{color:#90CDF4;font-size:13px;margin-top:6px;line-height:1.5}
-.login-modal-body{padding:32px}
+.modal{background:var(--bg2);border:1px solid var(--border2);border-radius:12px;width:100%;max-width:380px;overflow:hidden}
+.modal-head{background:var(--bg3);padding:20px 24px 16px;border-bottom:1px solid var(--border);position:relative}
+.modal-close{position:absolute;top:16px;right:16px;background:none;border:none;color:var(--muted);font-size:16px;cursor:pointer;line-height:1;padding:4px}
+.modal-close:hover{color:var(--text)}
+.modal-logo{width:36px;height:36px;background:var(--red);border-radius:8px;display:flex;align-items:center;justify-content:center;margin-bottom:12px}
+.modal-logo svg{width:18px;height:18px;stroke:#fff;fill:none;stroke-width:2.5;stroke-linecap:round}
+.modal-title{font-size:16px;font-weight:700;color:#fff}
+.modal-sub{font-size:12px;color:var(--muted);margin-top:3px}
+.modal-body{padding:20px 24px 24px}
 .login-step{display:none}
 .login-step.active{display:block}
-
-/* step 1 — choose who you are */
-.role-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:4px}
-.role-btn{border:2px solid var(--border2);border-radius:12px;padding:20px 12px;text-align:center;cursor:pointer;transition:all .2s;background:#fff}
-.role-btn:hover{border-color:var(--blue);background:var(--blue-bg)}
-.role-btn.selected{border-color:var(--blue);background:var(--blue-bg)}
-.role-icon{font-size:32px;margin-bottom:8px;line-height:1}
-.role-label{font-size:14px;font-weight:600;color:var(--navy);line-height:1.3}
-.role-desc{font-size:11px;color:var(--slate2);margin-top:3px;line-height:1.4}
-
-/* step 2 — phone number */
-.login-instruction{font-size:15px;font-weight:600;color:var(--navy);margin-bottom:6px;line-height:1.4}
-.login-hint{font-size:13px;color:var(--slate2);margin-bottom:20px;line-height:1.5}
-.big-input{width:100%;border:2px solid var(--border2);border-radius:10px;padding:16px 18px;font-size:22px;font-weight:600;color:var(--navy);font-family:inherit;outline:none;transition:border .15s;letter-spacing:2px;text-align:center}
+.login-instruction{font-size:14px;font-weight:600;color:#fff;margin-bottom:6px}
+.login-hint{font-size:12px;color:var(--muted);margin-bottom:16px}
+.role-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
+.role-btn{background:var(--bg);border:1.5px solid var(--border2);border-radius:8px;padding:16px 12px;text-align:center;cursor:pointer;transition:all .15s}
+.role-btn:hover{border-color:var(--blue2)}
+.role-btn.selected{border-color:var(--blue);background:rgba(59,130,246,.1)}
+.role-icon{font-size:22px;margin-bottom:6px}
+.role-label{font-size:12px;font-weight:600;color:var(--text)}
+.role-desc{font-size:10px;color:var(--muted);margin-top:2px}
+.modal-btn{width:100%;background:var(--blue);color:#fff;border:none;border-radius:6px;padding:11px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;transition:background .15s}
+.modal-btn:hover:not(:disabled){background:#2563eb}
+.modal-btn:disabled{opacity:.4;cursor:not-allowed}
+.modal-back{background:none;border:none;color:var(--muted);font-size:12px;cursor:pointer;margin-top:12px;font-family:inherit;padding:4px}
+.modal-back:hover{color:var(--text)}
+.big-input{width:100%;background:var(--bg);border:1.5px solid var(--border2);border-radius:8px;color:var(--text);font-size:18px;padding:12px 14px;font-family:inherit;outline:none;margin-bottom:4px;transition:border-color .15s}
 .big-input:focus{border-color:var(--blue)}
-.big-input::placeholder{font-size:15px;font-weight:400;letter-spacing:0;color:var(--slate3)}
-
-/* step 3 — PIN pad */
-.pin-display{display:flex;gap:10px;justify-content:center;margin-bottom:24px}
-.pin-dot{width:18px;height:18px;border-radius:50%;border:2px solid var(--border2);transition:all .15s}
-.pin-dot.filled{background:var(--navy);border-color:var(--navy)}
-.pin-pad{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
-.pin-key{border:1.5px solid var(--border2);border-radius:10px;padding:16px;font-size:22px;font-weight:600;color:var(--navy);text-align:center;cursor:pointer;transition:all .15s;background:#fff;user-select:none}
-.pin-key:hover{background:var(--navy);color:#fff;border-color:var(--navy)}
-.pin-key:active{transform:scale(.94)}
-.pin-key.del{font-size:16px;color:var(--slate)}
+.login-error{font-size:11px;color:var(--red2);margin-bottom:12px;display:none}
+.pin-display{display:flex;gap:8px;justify-content:center;margin:0 0 20px}
+.pin-dot{width:16px;height:16px;border-radius:50%;border:2px solid var(--border2);transition:all .15s}
+.pin-dot.filled{background:var(--blue);border-color:var(--blue)}
+.pin-pad{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:4px}
+.pin-key{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:14px;text-align:center;font-size:16px;font-weight:500;cursor:pointer;transition:all .15s;user-select:none}
+.pin-key:hover{background:var(--bg);border-color:var(--border2)}
+.pin-key:active{transform:scale(.95)}
 .pin-key.zero{grid-column:2}
-
-/* step 4 — success */
-.login-success{text-align:center;padding:8px 0}
-.success-icon{width:64px;height:64px;border-radius:50%;background:var(--green-bg);display:flex;align-items:center;justify-content:center;margin:0 auto 16px}
-.success-icon svg{width:32px;height:32px}
-.success-title{font-family:'Merriweather',serif;font-size:20px;font-weight:700;color:var(--navy);margin-bottom:8px}
-.success-body{font-size:14px;color:var(--slate);line-height:1.65;margin-bottom:20px}
-
-/* shared modal controls */
-.modal-btn{width:100%;background:var(--navy);color:#fff;font-size:15px;font-weight:600;padding:14px;border-radius:10px;border:none;cursor:pointer;margin-top:20px;transition:background .15s}
-.modal-btn:hover{background:var(--navy3)}
-.modal-btn:disabled{background:var(--slate3);cursor:not-allowed}
-.modal-btn-wa{width:100%;background:var(--wa);color:#fff;font-size:14px;font-weight:600;padding:13px;border-radius:10px;border:none;cursor:pointer;margin-top:10px;display:flex;align-items:center;justify-content:center;gap:8px;transition:background .15s}
-.modal-btn-wa:hover{background:var(--wa-dark)}
-.modal-btn-wa svg{width:18px;height:18px;fill:#fff}
-.modal-back{background:none;border:none;color:var(--slate2);font-size:13px;cursor:pointer;margin-top:14px;display:block;width:100%;text-align:center;padding:4px}
-.modal-back:hover{color:var(--navy)}
-.modal-close{position:absolute;top:16px;right:16px;background:rgba(255,255,255,.1);border:none;color:#fff;width:32px;height:32px;border-radius:50%;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .15s}
-.modal-close:hover{background:rgba(255,255,255,.2)}
-.login-modal-head{position:relative}
-.login-error{background:var(--red-bg);border:1px solid var(--red-bd);border-radius:8px;padding:10px 14px;font-size:13px;color:var(--red);margin-top:12px;display:none;text-align:center}
-
-/* FLOATING WA BUBBLE */
-.wa-float{position:fixed;bottom:28px;right:28px;z-index:500;display:flex;align-items:center;gap:10px}
-.wa-float-bubble{background:var(--wa);color:#fff;width:56px;height:56px;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 4px 20px rgba(37,211,102,.4);transition:transform .2s,box-shadow .2s;text-decoration:none}
-.wa-float-bubble:hover{transform:scale(1.08);box-shadow:0 6px 28px rgba(37,211,102,.5)}
-.wa-float-bubble svg{width:28px;height:28px;fill:#fff}
-.wa-float-label{background:#fff;border:1px solid var(--border);border-radius:6px;padding:6px 12px;font-size:12px;font-weight:600;color:var(--navy);white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,.1);animation:fadeslide 3s ease-in-out 1s forwards;opacity:0}
-@keyframes fadeslide{0%{opacity:0;transform:translateX(8px)}15%{opacity:1;transform:translateX(0)}85%{opacity:1;transform:translateX(0)}100%{opacity:0;transform:translateX(8px)}}
+.pin-key.del{grid-column:3;font-size:14px;color:var(--muted)}
+.success-icon{width:48px;height:48px;background:rgba(34,197,94,.15);border:1px solid rgba(34,197,94,.3);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 16px}
+.success-icon svg{width:22px;height:22px}
+.success-title{font-size:16px;font-weight:700;color:#fff;text-align:center;margin-bottom:8px}
+.success-body{font-size:12px;color:var(--muted);text-align:center;line-height:1.7;margin-bottom:20px}
 </style>
 </head>
 <body>
 
-<!-- LOGIN MODAL -->
-<div class="modal-overlay" id="login-modal" onclick="handleOverlayClick(event)">
-  <div class="login-modal">
-    <div class="login-modal-head">
-      <button class="modal-close" onclick="closeLogin()" aria-label="Close">&#x2715;</button>
-      <div class="login-modal-logo">
-        <svg viewBox="0 0 24 24" fill="none" stroke="#0B2545" stroke-width="2.5" stroke-linecap="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
-      </div>
-      <div class="login-modal-title">Welcome to NomaAlert</div>
-      <div class="login-modal-sub">Free screening for your community.<br>Simple to use — no experience needed.</div>
+<!-- NAV -->
+<nav class="nav">
+  <a class="nav-brand" href="#">
+    <div class="nav-logo">
+      <svg viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
     </div>
-    <div class="login-modal-body">
+    <div>
+      <div class="nav-name">NomaAlert</div>
+      <div class="nav-sub">Early Detection</div>
+    </div>
+  </a>
+  <div class="alert-pill" id="alert-badge">
+    <div class="pulse"></div>
+    <span id="alert-count">…</span> active alerts
+  </div>
+  <button class="nav-login" onclick="openLogin()">Sign in</button>
+</nav>
 
-      <!-- STEP 1: Who are you? -->
+<!-- MAIN CONTENT -->
+<div class="page">
+
+  <!-- HERO -->
+  <div class="hero">
+    <div class="hero-tag"><span></span>AI-powered disease surveillance<span></span></div>
+    <h1 class="hero-title">
+      Noma kills <em>90%</em> of the<br>children it touches.<br>
+      Caught early, it costs <em>$1</em> to cure.
+    </h1>
+    <p class="hero-body">
+      Noma is a gangrenous infection that destroys a child's face within <strong>72 hours</strong>.
+      It strikes children aged 2–6 in extreme poverty across sub-Saharan Africa —
+      140,000 new cases every year, almost entirely undetected until it's too late.
+      <br><br>
+      NomaAlert gives community health workers an AI triage tool:
+      photograph the wound, get a WHO-staged diagnosis and clinic referral in seconds.
+    </p>
+    <div class="stats">
+      <div class="stat">
+        <div class="stat-num red">90%</div>
+        <div class="stat-lbl">Fatal without<br>treatment</div>
+      </div>
+      <div class="stat-divider"></div>
+      <div class="stat">
+        <div class="stat-num green">$1</div>
+        <div class="stat-lbl">Antibiotic cost<br>at Stage 1</div>
+      </div>
+      <div class="stat-divider"></div>
+      <div class="stat">
+        <div class="stat-num">72h</div>
+        <div class="stat-lbl">From ulcer to<br>life-threatening</div>
+      </div>
+      <div class="stat-divider"></div>
+      <div class="stat">
+        <div class="stat-num">140k</div>
+        <div class="stat-lbl">New cases<br>per year</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SCREENING PANEL -->
+  <div class="panel-wrap">
+    <div class="panel" id="screen">
+      <div class="panel-head">
+        <div class="panel-title">Submit patient for AI screening</div>
+        <div class="panel-sub">Community health workers · Secure · Free</div>
+      </div>
+      <div class="panel-body">
+        <div class="frow">
+          <div class="fld"><label>Age (years)</label><input id="field-age" type="number" placeholder="e.g. 4" min="0" max="18"/></div>
+          <div class="fld"><label>Sex</label><select id="field-sex"><option value="male">Male</option><option value="female">Female</option></select></div>
+        </div>
+        <div class="fld"><label>Village / Region</label><input id="field-region" type="text" placeholder="e.g. Zinder Region, Niger"/></div>
+        <div class="fld"><label>Clinical notes (optional)</label><textarea id="field-notes" placeholder="Swelling, discolouration, lesions…"></textarea></div>
+        <div class="upload-zone" onclick="document.getElementById('main-img').click()">
+          <div class="uz-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#60a5fa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+          </div>
+          <div class="uz-title">Upload patient photograph</div>
+          <div class="uz-sub">JPG, PNG, WebP — max 10 MB</div>
+          <button class="uz-btn" type="button">Choose image</button>
+          <input type="file" id="main-img" accept="image/*" onchange="handleUpload(event)" style="display:none"/>
+        </div>
+        <div class="preview-wrap" id="preview-wrap">
+          <img class="preview-img" id="preview-img" alt="Patient image preview"/>
+          <button class="analyze-btn" onclick="runAnalysis()">Analyse with AI pipeline →</button>
+        </div>
+        <div class="result-wrap" id="result-wrap">
+          <div class="result-stage" id="result-stage">—</div>
+          <div class="result-text" id="result-text">—</div>
+          <div id="result-clinic" class="result-clinic" style="display:none"></div>
+          <button class="sms-btn" id="sms-btn" onclick="copyReferral()">Copy referral note →</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- AUTH MODAL -->
+<div class="modal-overlay" id="login-modal" onclick="handleOverlayClick(event)">
+  <div class="modal">
+    <div class="modal-head">
+      <button class="modal-close" onclick="closeLogin()">&#x2715;</button>
+      <div class="modal-logo">
+        <svg viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+      </div>
+      <div class="modal-title">Sign in to NomaAlert</div>
+      <div class="modal-sub">Free · Secure · No app required</div>
+    </div>
+    <div class="modal-body">
+
+      <!-- Step 1: Role -->
       <div class="login-step active" id="step-role">
         <div class="login-instruction">Who are you?</div>
-        <div class="login-hint">Tap the one that describes you best.</div>
+        <div class="login-hint">Select your role to continue.</div>
         <div class="role-grid">
           <div class="role-btn" onclick="selectRole('parent', this)">
             <div class="role-icon">👨‍👩‍👧</div>
-            <div class="role-label">Parent or caregiver</div>
-            <div class="role-desc">I am worried about my child</div>
+            <div class="role-label">Parent / Caregiver</div>
+            <div class="role-desc">Concerned about my child</div>
           </div>
           <div class="role-btn" onclick="selectRole('chw', this)">
             <div class="role-icon">🏥</div>
-            <div class="role-label">Health worker</div>
-            <div class="role-desc">I help people in my community</div>
+            <div class="role-label">Health Worker</div>
+            <div class="role-desc">Community health worker</div>
           </div>
         </div>
         <button class="modal-btn" id="role-next-btn" onclick="goToStep('step-phone')" disabled>Continue</button>
-        <button class="modal-btn-wa" onclick="closeLogin()" style="text-decoration:none">
-          <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
-          Use WhatsApp instead — even easier
-        </button>
       </div>
 
-      <!-- STEP 2: Phone number -->
+      <!-- Step 2: Phone -->
       <div class="login-step" id="step-phone">
         <div class="login-instruction" id="phone-instruction">What is your phone number?</div>
-        <div class="login-hint" id="phone-hint">Type the number you use every day. We will send you a code.</div>
-        <input class="big-input" id="phone-input" type="tel" inputmode="numeric" placeholder="e.g. 0812 345 6789" oninput="onPhoneInput()"/>
-        <div class="login-error" id="phone-error">Please enter a valid phone number (at least 8 digits).</div>
-        <button class="modal-btn" id="phone-next-btn" onclick="requestOtp()" disabled>Send me a code</button>
-        <button class="modal-back" onclick="goToStep('step-role')">&#8592; Go back</button>
+        <div class="login-hint" id="phone-hint">Include country code, e.g. +1 630 720 5467</div>
+        <input class="big-input" id="phone-input" type="tel" inputmode="numeric" placeholder="+1 234 567 8901" oninput="onPhoneInput()"/>
+        <div class="login-error" id="phone-error">Could not send code — check your number and try again.</div>
+        <button class="modal-btn" id="phone-next-btn" onclick="requestOtp()" disabled>Send verification code</button>
+        <button class="modal-back" onclick="goToStep('step-role')">&#8592; Back</button>
       </div>
 
-      <!-- STEP 3: PIN pad -->
+      <!-- Step 3: PIN -->
       <div class="login-step" id="step-pin">
-        <div class="login-instruction">Enter your 4-number code</div>
-        <div class="login-hint" id="pin-hint">We sent a code to your phone. Type it below.</div>
+        <div class="login-instruction">Enter your 6-digit code</div>
+        <div class="login-hint" id="pin-hint">We sent a code to your phone.</div>
         <div class="pin-display">
           <div class="pin-dot" id="pd0"></div>
           <div class="pin-dot" id="pd1"></div>
@@ -466,592 +310,48 @@ footer{background:var(--navy);padding:32px 0;border-top:1px solid rgba(255,255,2
           <div class="pin-key zero" onclick="pinPress('0')">0</div>
           <div class="pin-key del" onclick="pinDel()">&#9003;</div>
         </div>
-        <div class="login-error" id="pin-error">That code doesn't look right. Please try again.</div>
-        <button class="modal-back" onclick="goToStep('step-phone')">&#8592; Go back</button>
+        <div class="login-error" id="pin-error">Incorrect code — please try again.</div>
+        <button class="modal-back" onclick="goToStep('step-phone')">&#8592; Back</button>
       </div>
 
-      <!-- STEP 4: Success -->
+      <!-- Step 4: Success -->
       <div class="login-step" id="step-success">
-        <div class="login-success">
-          <div class="success-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="#1A5C3A" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
-          </div>
-          <div class="success-title" id="success-title">You are in!</div>
-          <div class="success-body" id="success-body">You can now submit a photograph and our system will check your child immediately. It is free and takes about 15 minutes.</div>
-          <button class="modal-btn" onclick="closeLoginSuccess()">Start screening now</button>
+        <div class="success-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
         </div>
+        <div class="success-title" id="success-title">You're signed in.</div>
+        <div class="success-body" id="success-body">You can now submit patient cases for AI screening.</div>
+        <button class="modal-btn" onclick="closeLoginSuccess()">Start screening</button>
       </div>
 
     </div>
   </div>
 </div>
-
-<!-- FLOATING WA BUBBLE -->
-<div class="wa-float">
-  <div class="wa-float-label">Diagnose via WhatsApp</div>
-  <a class="wa-float-bubble" href="https://wa.me/1234567890" target="_blank" aria-label="Diagnose via WhatsApp">
-    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
-  </a>
-</div>
-
-<!-- NAV -->
-<nav class="nav">
-  <div class="container">
-    <div class="nav-inner">
-      <a class="nav-brand" href="#">
-        <div class="nav-logomark">
-          <svg viewBox="0 0 24 24" fill="none" stroke="#0B2545" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
-        </div>
-        <div>
-          <div class="nav-name">NomaAlert</div>
-          <div class="nav-subtitle">Early Detection Platform</div>
-        </div>
-      </a>
-      <div class="nav-links">
-        <a class="nav-link active" href="#about">About Noma</a>
-        <a class="nav-link" href="#solution">Our solution</a>
-        <a class="nav-link" href="#whatsapp">WhatsApp</a>
-        <a class="nav-link" href="#screen">Screen a patient</a>
-        <a class="nav-link" href="#team">About us</a>
-      </div>
-      <div class="nav-cta">
-        <div class="nav-alert-btn" id="alert-badge"><div class="pulse"></div><span id="alert-count">…</span> active alerts</div>
-        <a class="btn-wa-nav" href="https://wa.me/1234567890" target="_blank">
-          <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
-          Diagnose via WhatsApp
-        </a>
-        <div class="nav-login" onclick="openLogin()">CHW / Parent login</div>
-      </div>
-    </div>
-  </div>
-</nav>
-
-<!-- HERO -->
-<div class="hero" id="top">
-  <div class="container">
-    <div class="hero-inner">
-      <div>
-        <div class="hero-kicker">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
-          AI-powered disease surveillance
-        </div>
-        <h1>Early detection of <em>Noma disease</em> — before it becomes irreversible</h1>
-        <p class="hero-lead">NomaAlert gives community health workers in sub-Saharan Africa a simple tool: photograph a child, submit the image, and receive an AI-generated triage decision and referral note within minutes — no specialist required.</p>
-        <p class="hero-lead">Noma is a rapidly progressive, gangrenous infection that kills 70–90% of children it touches if untreated. Caught early, it costs less than $1 to treat. We are building the infrastructure to close that gap.</p>
-        <div class="hero-fact">
-          <p><strong>140,000 children</strong> are newly diagnosed with Noma every year. Most live in communities with no nearby clinic, no specialist, and no system to detect an outbreak before it spreads. NomaAlert is built to change that.</p>
-        </div>
-        <div class="hero-actions">
-          <a class="btn-hero" href="#screen">Screen a patient</a>
-          <a class="btn-wa-hero" href="https://wa.me/1234567890" target="_blank">
-            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
-            Diagnose via WhatsApp
-          </a>
-          <a class="btn-ghost" href="#about">What is Noma?</a>
-        </div>
-      </div>
-
-      <!-- UPLOAD CARD -->
-      <div class="upload-card" id="screen">
-        <div class="uc-head">
-          <div class="uc-head-title">Submit patient for AI screening</div>
-          <div class="uc-head-sub">For community health workers (CHWs) · Secure · Free</div>
-        </div>
-        <div class="uc-body">
-          <div class="form-row">
-            <div class="fld"><label>Patient age</label><input id="field-age" type="number" placeholder="e.g. 6" min="0" max="18"/></div>
-            <div class="fld"><label>Sex</label><select id="field-sex"><option value="male">Male</option><option value="female">Female</option></select></div>
-          </div>
-          <div class="fld" style="margin-bottom:10px"><label>Village / region</label><input id="field-region" type="text" placeholder="e.g. Zinder Region, Niger"/></div>
-          <div class="fld" style="margin-bottom:4px"><label>Clinical notes (optional)</label><textarea id="field-notes" placeholder="Describe symptoms observed — swelling, discolouration, lesions…"></textarea></div>
-          <div class="upload-zone" onclick="document.getElementById('main-img').click()">
-            <div class="uz-icon">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1A56A0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-            </div>
-            <div class="uz-title">Upload patient photograph</div>
-            <div class="uz-sub">JPG, PNG, HEIC · Max 10 MB</div>
-            <button class="uz-btn" type="button">Choose image</button>
-            <input type="file" id="main-img" accept="image/*" onchange="handleUpload(event)" style="display:none"/>
-          </div>
-          <div class="preview-wrap" id="preview-wrap">
-            <img class="preview-img" id="preview-img" alt="Patient image preview"/>
-            <button class="analyze-btn" onclick="runAnalysis()">Analyse with AI pipeline →</button>
-          </div>
-          <div class="result-wrap" id="result-wrap">
-            <div class="result-stage" id="result-stage">—</div>
-            <div class="result-text" id="result-text">—</div>
-            <div id="result-clinic" style="font-size:11px;color:#742A2A;margin-bottom:8px;display:none"></div>
-            <button class="sms-btn" id="sms-btn" onclick="copyReferral()">Copy referral note →</button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- STAT STRIP -->
-    <div class="hero-stat-strip">
-      <div class="hstat"><div class="hstat-num">140,000</div><div class="hstat-lbl">New cases of Noma per year globally</div><div class="hstat-source">Source: WHO, 2023</div></div>
-      <div class="hstat"><div class="hstat-num">70–90%</div><div class="hstat-lbl">Fatality rate without treatment</div><div class="hstat-source">Source: Médecins Sans Frontières</div></div>
-      <div class="hstat"><div class="hstat-num">&lt; $1</div><div class="hstat-lbl">Cost of antibiotics to treat at Stage 1</div><div class="hstat-source">Source: Noma Children Hospital, Sokoto</div></div>
-      <div class="hstat"><div class="hstat-num">2023</div><div class="hstat-lbl">Year WHO added Noma to neglected tropical diseases list</div><div class="hstat-source">Source: WHO NTD roadmap</div></div>
-    </div>
-  </div>
-</div>
-
-<!-- ABOUT NOMA -->
-<div class="section section-white" id="about">
-  <div class="container">
-    <div class="s-eyebrow">Understanding the disease</div>
-    <div class="disease-grid">
-      <div class="disease-body">
-        <div class="s-title">What is Noma?</div>
-        <p>Noma — also known as <strong>Cancrum oris</strong>, or "mouth fire" in several West African languages — is a devastating gangrenous infection that destroys the soft tissue and bone of the mouth and face. It begins as a simple ulcer in the gum but can spread to consume the entire cheek within days.</p>
-        <p>The disease almost exclusively strikes <strong>children between the ages of 2 and 6</strong> who are severely malnourished and living in extreme poverty. It is not contagious, but its conditions — malnutrition, contaminated water, weakened immunity — are endemic across sub-Saharan Africa's drylands.</p>
-        <p>What makes Noma uniquely tragic is the <strong>narrowness of the treatment window</strong>. In the first stage, a simple course of oral antibiotics costing less than one US dollar can reverse the disease entirely. By Stage 3, a child requires inpatient hospital care, IV antibiotics, and nutritional rehabilitation. By Stage 4, survival means living with permanent, severe facial disfigurement and the stigma and psychological trauma that follow.</p>
-        <div class="pull-quote">
-          <p>"Noma is a disease of extreme poverty. It is the face of inequity."</p>
-          <cite>— Dr. Trish Khoo, MSF oral health advisor</cite>
-        </div>
-        <p>In 2023, the World Health Organisation formally added Noma to its <strong>list of neglected tropical diseases</strong> — a recognition that came after decades of advocacy. Despite affecting tens of thousands of children a year, it receives a fraction of the research funding directed at diseases with far smaller death tolls.</p>
-      </div>
-      <div class="fact-cards">
-        <div class="fact-card"><div class="fact-card-num">90%</div><div class="fact-card-desc">of cases occur in the "Noma belt" — a band across sub-Saharan Africa spanning Niger, Nigeria, Mali, Burkina Faso, Senegal, and Ethiopia, closely overlapping with the Sahel famine zone.</div><div class="fact-card-source">WHO Fact Sheet, 2023</div></div>
-        <div class="fact-card"><div class="fact-card-num">72 hrs</div><div class="fact-card-desc">The speed at which Noma can progress from a visible ulcer to life-threatening gangrene. No other orofacial disease moves this quickly, which is why real-time detection matters.</div><div class="fact-card-source">Lehman & Albert, 2011 — Oral Diseases journal</div></div>
-        <div class="fact-card"><div class="fact-card-num">1 in 8</div><div class="fact-card-desc">Estimated proportion of Noma survivors who receive any reconstructive surgery. The procedures are complex, expensive, and available only at a handful of specialist centres worldwide.</div><div class="fact-card-source">Noma Foundation, Amsterdam</div></div>
-        <div class="fact-card"><div class="fact-card-num">6–24 mos</div><div class="fact-card-desc">The typical wait time for reconstructive surgery at specialist centres like the Noma Children Hospital in Sokoto, Nigeria — due to limited capacity and enormous patient backlogs.</div><div class="fact-card-source">Operation Smile / Facing Africa</div></div>
-        <div class="fact-card"><div class="fact-card-num">Added 2023</div><div class="fact-card-desc">Noma was officially added to the WHO list of neglected tropical diseases in December 2023 — the first new addition in over a decade, and a milestone for global advocacy.</div><div class="fact-card-source">WHO Executive Board, 154th session</div></div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- CLINICAL STAGES -->
-<div class="section section-alt">
-  <div class="container">
-    <div class="stages-intro">
-      <div class="s-eyebrow">Clinical staging</div>
-      <div class="s-title">The four stages of Noma — and why the window matters</div>
-      <p class="s-lead">The entire difference between a full recovery and a lifetime of disfigurement is time — and the ability to identify the disease before it crosses into irreversibility.</p>
-    </div>
-    <div class="stages-grid">
-      <div class="stage-card stage-s1">
-        <div class="stage-head"><div class="stage-num-badge">Stage 1</div><div class="stage-name">Acute necrotising gingivitis</div><div class="stage-survival">Survival rate: ~99% if treated</div></div>
-        <div class="stage-body"><p>Painful, bleeding gums with necrotic ulceration at the gum line. A single course of oral amoxicillin and metronidazole reverses the disease entirely within days.</p><div class="stage-cost">Treatment cost: ~$0.50</div></div>
-      </div>
-      <div class="stage-card stage-s2">
-        <div class="stage-head"><div class="stage-num-badge">Stage 2</div><div class="stage-name">Oedema of the cheek</div><div class="stage-survival">Survival rate: ~85% if treated</div></div>
-        <div class="stage-body"><p>The infection spreads to the soft tissue. Swelling appears — often painless, which can delay recognition. Hospital referral is now necessary but antibiotic therapy remains effective.</p><div class="stage-cost">Treatment cost: ~$15–40</div></div>
-      </div>
-      <div class="stage-card stage-s3">
-        <div class="stage-head"><div class="stage-num-badge">Stage 3</div><div class="stage-name">Gangrenous necrosis</div><div class="stage-survival">Survival rate: ~50–60% if treated</div></div>
-        <div class="stage-body"><p>A zone of blackened, dry, necrotic tissue forms on the cheek. Urgent hospital admission, IV antibiotics, wound debridement, and nutritional rehabilitation required.</p><div class="stage-cost">Treatment cost: ~$200–800</div></div>
-      </div>
-      <div class="stage-card stage-s4">
-        <div class="stage-head"><div class="stage-num-badge">Stage 4</div><div class="stage-name">Scarring and sequelae</div><div class="stage-survival">Child has survived — with disfigurement</div></div>
-        <div class="stage-body"><p>Tissue destruction is complete. The child faces permanent facial disfigurement, trismus, speech and eating difficulties, and years of reconstructive surgery.</p><div class="stage-cost">Reconstructive surgery: $5,000–80,000+</div></div>
-      </div>
-    </div>
-
-    <div class="photo-section">
-      <div class="photo-section-title">Clinical reference image library</div>
-      <div class="photo-section-sub">Upload representative images for each stage. These help train community health workers to recognise Noma in the field and calibrate the AI model.</div>
-      <div class="photo-grid">
-        <div class="photo-slot" onclick="document.getElementById('ps1').click()">
-          <div class="photo-placeholder"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#A0AEC0" stroke-width="1.5" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg><span>Add image</span></div>
-          <img class="photo-loaded" id="ps1-img" alt="Stage 1"/>
-          <input type="file" id="ps1" accept="image/*" style="display:none" onchange="loadPhoto(event,'ps1-img',this.closest('.photo-slot'))"/>
-          <div class="photo-label"><div class="photo-stage">Stage 1 — Gingivitis</div><div class="photo-tip">Early gum ulceration · click to upload</div></div>
-        </div>
-        <div class="photo-slot" onclick="document.getElementById('ps2').click()">
-          <div class="photo-placeholder"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#A0AEC0" stroke-width="1.5" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg><span>Add image</span></div>
-          <img class="photo-loaded" id="ps2-img" alt="Stage 2"/>
-          <input type="file" id="ps2" accept="image/*" style="display:none" onchange="loadPhoto(event,'ps2-img',this.closest('.photo-slot'))"/>
-          <div class="photo-label"><div class="photo-stage">Stage 2 — Oedema</div><div class="photo-tip">Cheek swelling · click to upload</div></div>
-        </div>
-        <div class="photo-slot" onclick="document.getElementById('ps3').click()">
-          <div class="photo-placeholder"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#A0AEC0" stroke-width="1.5" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg><span>Add image</span></div>
-          <img class="photo-loaded" id="ps3-img" alt="Stage 3"/>
-          <input type="file" id="ps3" accept="image/*" style="display:none" onchange="loadPhoto(event,'ps3-img',this.closest('.photo-slot'))"/>
-          <div class="photo-label"><div class="photo-stage">Stage 3 — Gangrene</div><div class="photo-tip">Necrotic tissue · click to upload</div></div>
-        </div>
-        <div class="photo-slot" onclick="document.getElementById('ps4').click()">
-          <div class="photo-placeholder"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#A0AEC0" stroke-width="1.5" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg><span>Add image</span></div>
-          <img class="photo-loaded" id="ps4-img" alt="Stage 4"/>
-          <input type="file" id="ps4" accept="image/*" style="display:none" onchange="loadPhoto(event,'ps4-img',this.closest('.photo-slot'))"/>
-          <div class="photo-label"><div class="photo-stage">Stage 4 — Scarring</div><div class="photo-tip">Post-gangrenous sequelae · click to upload</div></div>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- WHY NEGLECTED -->
-<div class="section section-white">
-  <div class="container">
-    <div class="s-eyebrow">The systemic problem</div>
-    <div class="s-title">Why Noma keeps being forgotten</div>
-    <p class="s-lead" style="max-width:680px">Noma is not an unsolvable disease — it is an under-prioritised one. Three structural failures keep it claiming children's lives every day.</p>
-    <div class="neglect-grid">
-      <div class="neglect-card">
-        <div class="neglect-icon" style="background:var(--red-bg)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#C53030" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></div>
-        <div class="neglect-title">No detection system at primary care level</div>
-        <div class="neglect-body">Community health workers — the first and often only point of contact for rural children — receive no Noma-specific training and have no tools to identify the disease in its treatable stages. By the time a specialist sees a case, it is typically Stage 3 or 4.</div>
-      </div>
-      <div class="neglect-card">
-        <div class="neglect-icon" style="background:var(--amber-bg)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#92600A" stroke-width="2" stroke-linecap="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div>
-        <div class="neglect-title">Extreme geographic and infrastructure barriers</div>
-        <div class="neglect-body">The communities most affected by Noma are in remote drylands with little or no road access, no reliable electricity, and clinic-to-patient ratios that make physical outreach impossible at scale. Digital tools that work on a basic smartphone are the only viable path.</div>
-      </div>
-      <div class="neglect-card">
-        <div class="neglect-icon" style="background:var(--blue-bg)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1A56A0" stroke-width="2" stroke-linecap="round"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg></div>
-        <div class="neglect-title">No outbreak surveillance infrastructure</div>
-        <div class="neglect-body">Noma clusters geographically — when one child in a village is affected, others nearby are at high risk. Without a system to aggregate case reports and identify spatial clusters in real time, outbreaks are only detected weeks after they begin.</div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- HOW WE SOLVE -->
-<div class="section section-alt" id="solution">
-  <div class="container">
-    <div class="s-eyebrow">How NomaAlert solves this</div>
-    <div class="solve-intro">
-      <div class="solve-intro-text">
-        <div class="s-title">A full-stack AI early warning system — built for the field</div>
-        <p>NomaAlert is not a chatbot or a research prototype. It is a production-grade backend system with three integrated components: a computer vision AI that classifies Noma stage from a photograph, a clinical reasoning model that generates structured referral notes, and a geospatial surveillance agent that identifies outbreak clusters and fires SMS alerts automatically.</p>
-        <p>The entire system is designed around one constraint: <strong>a community health worker with a basic Android smartphone and intermittent internet access.</strong> No app to install. Submit a photograph, receive a decision in under 15 minutes. Or skip the web entirely — diagnose directly on WhatsApp.</p>
-        <a class="btn-wa-inline" href="#whatsapp">
-          <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
-          See the WhatsApp flow
-        </a>
-      </div>
-      <div class="tech-stack">
-        <div class="tech-row"><div class="tech-row-label">Runtime</div><div class="tech-row-val">Bun + TypeScript + Express</div><div class="tech-row-desc">Fast, serverless-ready</div></div>
-        <div class="tech-row"><div class="tech-row-label">Vision AI</div><div class="tech-row-val">Kimi K2.5 (vision model)</div><div class="tech-row-desc">Stage classification</div></div>
-        <div class="tech-row"><div class="tech-row-label">Reasoning</div><div class="tech-row-val">Kimi K2-Thinking</div><div class="tech-row-desc">Referral note generation</div></div>
-        <div class="tech-row"><div class="tech-row-label">Compute</div><div class="tech-row-val">Dedalus VMs (warm pool)</div><div class="tech-row-desc">3 VMs, always-on</div></div>
-        <div class="tech-row"><div class="tech-row-label">Database</div><div class="tech-row-val">Supabase (PostgreSQL)</div><div class="tech-row-desc">Cases + geospatial</div></div>
-        <div class="tech-row"><div class="tech-row-label">Alerts</div><div class="tech-row-val">Twilio SMS</div><div class="tech-row-desc">Referrals + outbreaks</div></div>
-        <div class="tech-row" style="border:1.5px solid rgba(37,211,102,.4);background:var(--green-bg)"><div class="tech-row-label" style="color:var(--green)">WhatsApp</div><div class="tech-row-val" style="color:var(--green)">Photon + WhatsApp Business API</div><div class="tech-row-desc">Zero-app access</div></div>
-      </div>
-    </div>
-
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:48px">
-      <div>
-        <div class="pipeline-step">
-          <div class="pipe-num" style="background:var(--blue-bg);border-color:var(--blue-bd)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1A56A0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></div>
-          <div><div class="pipe-content-title">Image submitted via web or WhatsApp</div><div class="pipe-content-body">The CHW fills a short form and attaches a photograph. Submissions arrive via the web portal or directly through WhatsApp — no app install required on either channel.</div><div class="pipe-badge" style="background:var(--blue-bg);color:var(--blue)">POST /api/screen</div></div>
-        </div>
-        <div class="pipeline-step">
-          <div class="pipe-num" style="background:var(--teal-bg);border-color:var(--teal-bd)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#234E52" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M9 12l2 2 4-4"/></svg></div>
-          <div><div class="pipe-content-title">VM 1: Kimi K2.5 classifies the image</div><div class="pipe-content-body">The photograph is routed to a warm Dedalus VM running Kimi K2.5. It analyses tissue markers, swelling pattern, and lesion extent — outputting a Stage 1–4 classification with confidence score.</div><div class="pipe-badge" style="background:var(--teal-bg);color:var(--teal)">Kimi K2.5 Vision</div></div>
-        </div>
-      </div>
-      <div>
-        <div class="pipeline-step">
-          <div class="pipe-num" style="background:var(--amber-bg);border-color:var(--amber-bd)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#92600A" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></div>
-          <div><div class="pipe-content-title">VM 2–3: Clinical reasoning and referral note</div><div class="pipe-content-body">Kimi K2-Thinking takes the stage classification, patient metadata, and clinic data and generates a structured referral note — diagnosis, recommended treatment, urgency level, and clinic address.</div><div class="pipe-badge" style="background:var(--amber-bg);color:var(--amber)">Kimi K2-Thinking</div></div>
-        </div>
-        <div class="pipeline-step">
-          <div class="pipe-num" style="background:var(--green-bg);border-color:var(--green-bd)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1A5C3A" stroke-width="2" stroke-linecap="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.18 2 2 0 0 1 3.59 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.96a16 16 0 0 0 6.13 6.13l1.04-1.04a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg></div>
-          <div><div class="pipe-content-title">SMS / WhatsApp referral + outbreak surveillance</div><div class="pipe-content-body">Twilio fires the referral to the nearest clinic. In parallel, the surveillance agent polls every 5 minutes and alerts the district health officer if 3+ cases appear within 10km in 48 hours.</div><div class="pipe-badge" style="background:var(--green-bg);color:var(--green)">Twilio · Supabase Haversine</div></div>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- WHATSAPP SECTION -->
-<div class="wa-section" id="whatsapp">
-  <div class="container">
-    <div class="wa-outer">
-      <div class="wa-intro">
-        <div class="s-eyebrow" style="color:var(--wa-dark)">Zero-app access</div>
-        <div class="s-title">Diagnose on WhatsApp — no download, no login</div>
-        <p class="s-lead" style="margin-bottom:20px">For communities where internet access is intermittent and app storage is scarce, WhatsApp is already installed on virtually every smartphone. NomaAlert integrates directly with WhatsApp Business API via Photon, so a health worker can submit a case, receive a diagnosis, and get a clinic referral — all within a conversation they already know how to use.</p>
-        <p style="font-size:14px;color:var(--slate);line-height:1.85">The bot guides the health worker through a structured intake flow: age and village, reported symptoms, then a photo of the affected child. The AI pipeline runs in the background — the same Kimi K2.5 vision model and K2-Thinking reasoning pipeline — and returns the result as a WhatsApp message with stage, confidence score, clinical rationale, and nearest clinic details. Transport options are included for critical cases.</p>
-        <div class="wa-steps">
-          <div class="wa-step">
-            <div class="wa-step-dot"><svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg></div>
-            <div class="wa-step-text"><strong>No app to install.</strong> The CHW messages a saved WhatsApp number. The bot responds instantly in their language.</div>
-          </div>
-          <div class="wa-step">
-            <div class="wa-step-dot"><svg viewBox="0 0 24 24"><path d="M9 11l3 3L22 4M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></div>
-            <div class="wa-step-text"><strong>Structured intake in natural language.</strong> Age, village, and symptoms collected step by step — no form to fill, no fields to navigate.</div>
-          </div>
-          <div class="wa-step">
-            <div class="wa-step-dot"><svg viewBox="0 0 24 24"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></div>
-            <div class="wa-step-text"><strong>Send a photo — get a diagnosis.</strong> The AI returns stage classification, confidence, and clinical rationale as a readable WhatsApp message.</div>
-          </div>
-          <div class="wa-step">
-            <div class="wa-step-dot"><svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.18 2 2 0 0 1 3.59 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.96a16 16 0 0 0 6.13 6.13l1.04-1.04a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg></div>
-            <div class="wa-step-text"><strong>Referral and transport confirmed over WhatsApp.</strong> Clinic name, address, phone, and transport guidance delivered as a pinnable message — shareable with the family.</div>
-          </div>
-        </div>
-        <div class="wa-cta-box">
-          <p><strong>Available now for community health workers in Niger, Nigeria, Mali, and Burkina Faso.</strong> Save the number, send "Hello" — the bot handles the rest.</p>
-          <a class="btn-wa-hero" href="https://wa.me/1234567890" target="_blank" style="font-size:14px">
-            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
-            Start WhatsApp diagnosis
-          </a>
-        </div>
-      </div>
-
-      <!-- PHONE FRAME WITH WA CHAT -->
-      <div>
-        <div class="phone-frame">
-          <div class="phone-top-bar">
-            <span class="phone-time">9:41</span>
-            <div class="phone-icons"><span>&#9679;&#9679;&#9679;</span><span>&#9679;&#9679;&#9679;&#9679;</span></div>
-          </div>
-          <div class="wa-app">
-            <div class="wa-header">
-              <div class="wa-avatar">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0B2545" stroke-width="2.5" stroke-linecap="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
-              </div>
-              <div>
-                <div class="wa-header-name">NomaAlert</div>
-                <div class="wa-header-status">Online · Powered by Photon</div>
-              </div>
-            </div>
-            <div class="wa-chat" id="wa-chat">
-              <div class="wa-sys">Today</div>
-
-              <div class="wa-msg wa-in">Hello! I am the NomaAlert diagnostic assistant. I will guide you through a quick screening. What is the child's age?<div class="wa-msg-time">9:34</div></div>
-
-              <div class="wa-msg wa-out">6 years old<div class="wa-msg-time">9:34</div></div>
-
-              <div class="wa-msg wa-in">Thank you. Which village or region is the child from?<div class="wa-msg-time">9:34</div></div>
-
-              <div class="wa-msg wa-out">Zinder, Niger<div class="wa-msg-time">9:35</div></div>
-
-              <div class="wa-msg wa-in">What symptoms have you observed? (e.g. swelling, discolouration, ulcers, fever)<div class="wa-msg-time">9:35</div></div>
-
-              <div class="wa-msg wa-out">Swelling left cheek, dark patch, mild fever, not eating<div class="wa-msg-time">9:36</div></div>
-
-              <div class="wa-msg wa-in">Please send a clear photograph of the affected area now. Good lighting helps accuracy.<div class="wa-msg-time">9:36</div></div>
-
-              <div class="wa-img-bubble">
-                <div class="wa-img-thumb"><svg viewBox="0 0 24 24" fill="none" stroke="#999" stroke-width="1.5" width="28" height="28"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></div>
-                <div class="wa-img-caption">photo_child.jpg · 2.1 MB<div class="wa-msg-time" style="margin-top:2px">9:37</div></div>
-              </div>
-
-              <div class="wa-msg wa-in">Image received. Analysing with AI pipeline — this takes about 60 seconds. Please wait.<div class="wa-msg-time">9:37</div></div>
-
-              <div class="wa-typing" id="wa-typing"><div class="wa-dot"></div><div class="wa-dot"></div><div class="wa-dot"></div></div>
-
-              <div class="wa-result-card" id="wa-result" style="display:none">
-                <div class="wa-result-head"><div class="wa-result-head-text">AI DIAGNOSIS RESULT</div></div>
-                <div class="wa-result-body">
-                  <div class="wa-result-row"><span class="wa-result-label">Stage</span><span class="wa-result-val" style="color:#C05621">Stage 3 — Gangrenous</span></div>
-                  <div class="wa-result-row"><span class="wa-result-label">Confidence</span><span class="wa-result-val">91%</span></div>
-                  <div style="border-top:1px solid var(--border);margin:5px 0;padding-top:5px;font-size:9px;color:var(--slate);line-height:1.6"><strong style="color:#2D3748">Clinical rationale:</strong> Necrotic tissue identified on left cheek consistent with Stage 3 Noma. Gangrenous patch approx. 3cm. Fever and reduced intake confirm systemic involvement.</div>
-                  <div class="wa-msg-time">9:38</div>
-                </div>
-              </div>
-
-              <div class="wa-referral-card" id="wa-referral" style="display:none">
-                <div class="wa-referral-head"><div class="wa-referral-head-text">CLINIC REFERRAL</div></div>
-                <div class="wa-referral-body">
-                  <div class="wa-result-row"><span class="wa-result-label">Clinic</span><span class="wa-result-val">Zinder Regional Hospital</span></div>
-                  <div class="wa-result-row"><span class="wa-result-label">Distance</span><span class="wa-result-val">12.4 km</span></div>
-                  <div class="wa-result-row"><span class="wa-result-label">Contact</span><span class="wa-result-val" style="color:var(--blue)">+227 20 51 2244</span></div>
-                  <div class="wa-result-row"><span class="wa-result-label">Priority</span><span class="wa-result-val" style="color:var(--red)">URGENT — within 6 hours</span></div>
-                  <div style="border-top:1px solid var(--border);margin:5px 0;padding-top:5px;font-size:9px;color:var(--slate)">IV amoxicillin + metronidazole on arrival. Notify ward in advance.</div>
-                  <div class="wa-msg-time">9:38</div>
-                </div>
-              </div>
-
-              <div class="wa-transport" id="wa-transport" style="display:none">
-                <p><strong>Transport options from Zinder:</strong><br/>&#8226; Zinder Community Ambulance: +227 96 00 1122<br/>&#8226; Local moto-taxi: approx. 2,000 CFA<br/>&#8226; Share this message with the family to show the driver.</p>
-                <div class="wa-msg-time" style="margin-top:4px">9:39</div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- PHOTON PARTNER STRIP -->
-<div class="photon-strip">
-  <div class="container">
-    <div class="photon-inner">
-      <div class="photon-label">Powered by</div>
-      <div class="photon-card">
-        <div class="photon-logo-box">
-          <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <circle cx="20" cy="20" r="18" fill="#0B2545"/>
-            <path d="M12 20 L20 12 L28 20 L20 28 Z" fill="#25D366"/>
-            <circle cx="20" cy="20" r="4" fill="#fff"/>
-          </svg>
-        </div>
-        <div style="flex:1">
-          <div class="photon-name">Photon</div>
-          <div class="photon-desc">WhatsApp Business API infrastructure powering NomaAlert's zero-app diagnostic channel. Photon handles message routing, media ingestion, and webhook delivery at scale across West Africa.</div>
-          <div class="photon-tags">
-            <span class="photon-tag">WhatsApp Business API</span>
-            <span class="photon-tag">Media webhooks</span>
-            <span class="photon-tag">Multi-language routing</span>
-            <span class="photon-tag">99.9% uptime SLA</span>
-          </div>
-        </div>
-        <div class="photon-stat-col">
-          <div class="photon-stat"><div class="photon-stat-num">2B+</div><div class="photon-stat-lbl">WhatsApp users reached</div></div>
-          <div class="photon-stat"><div class="photon-stat-num">&lt;2s</div><div class="photon-stat-lbl">Avg. message delivery</div></div>
-          <div class="photon-stat"><div class="photon-stat-num">30+</div><div class="photon-stat-lbl">Countries supported</div></div>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- IMPACT -->
-<div class="section section-navy">
-  <div class="container">
-    <div class="s-eyebrow" style="color:#90CDF4">What early detection means in practice</div>
-    <div class="s-title s-title-white">The difference NomaAlert makes</div>
-    <div class="impact-grid">
-      <div class="impact-card"><div class="impact-card-num">$0.50 → $0</div><div class="impact-card-title">Cost of treatment at Stage 1</div><div class="impact-card-body">A child caught at Stage 1 needs a short course of widely available antibiotics. By Stage 3, the same child needs hospitalisation and IV care — costing hundreds of times more and still leaving permanent damage.</div></div>
-      <div class="impact-card"><div class="impact-card-num">14 min</div><div class="impact-card-title">Average AI triage time</div><div class="impact-card-body">The current model delivers a stage classification and referral note in under 15 minutes — via web or WhatsApp. Without NomaAlert, a CHW's only option is a multi-day journey to a clinic.</div></div>
-      <div class="impact-card"><div class="impact-card-num">First</div><div class="impact-card-title">Automated Noma cluster detection</div><div class="impact-card-body">NomaAlert's surveillance agent is the first automated Noma outbreak detection system ever built. It polls every 5 minutes and fires an alert before an outbreak becomes an epidemic.</div></div>
-    </div>
-  </div>
-</div>
-
-<!-- CHW EXPERIENCE -->
-<div class="section section-white">
-  <div class="container">
-    <div class="chw-grid">
-      <div>
-        <div class="s-eyebrow">Designed for the field</div>
-        <div class="s-title">Built around the health worker, not the hospital</div>
-        <p class="s-lead" style="margin-bottom:0">Works on any smartphone. Nothing to install. Diagnose via the web portal or WhatsApp — whichever the CHW has access to.</p>
-        <div class="chw-steps">
-          <div class="chw-step"><div class="chw-step-num">1</div><div><div class="chw-step-title">Open on any phone browser — or WhatsApp</div><div class="chw-step-body">No app download. No account creation. Navigate to the URL or message the WhatsApp number. The interface loads in under 3 seconds on 3G.</div></div></div>
-          <div class="chw-step"><div class="chw-step-num">2</div><div><div class="chw-step-title">Fill in patient details and photograph the child</div><div class="chw-step-body">Age, sex, village, and a brief symptom note. Then a photograph of the affected area taken directly with the phone camera.</div></div></div>
-          <div class="chw-step"><div class="chw-step-num">3</div><div><div class="chw-step-title">Receive triage result in under 15 minutes</div><div class="chw-step-body">The AI pipeline returns a stage classification, clinical summary, confidence score, and the address of the nearest connected clinic.</div></div></div>
-          <div class="chw-step"><div class="chw-step-num">4</div><div><div class="chw-step-title">Send the referral with one tap</div><div class="chw-step-body">The structured referral note goes to the clinic via SMS or WhatsApp. The clinic receives the patient's details before the child even arrives.</div></div></div>
-        </div>
-        <div class="chw-note"><p><strong>Outbreak detection is automatic.</strong> When enough cases cluster geographically, the district health officer receives an alert without any manual reporting step.</p></div>
-      </div>
-      <div>
-        <div class="phone-mock">
-          <div class="phone-notch"></div>
-          <div class="phone-screen-content">
-            <div class="phone-screen-head"><div class="phone-screen-title">NomaAlert — Patient screening</div><div class="phone-screen-sub">Community Health Worker Portal</div></div>
-            <div class="phone-screen-body">
-              <div class="phone-field"><div class="phone-field-label">Patient age</div><div class="phone-field-val">6 years old</div></div>
-              <div class="phone-field"><div class="phone-field-label">Location</div><div class="phone-field-val">Zinder Region, Niger</div></div>
-              <div class="phone-field"><div class="phone-field-label">Symptoms observed</div><div class="phone-field-val">Swelling of left cheek, visible ulceration</div></div>
-              <div class="phone-upload-zone"><div class="phone-upload-text">Patient photograph attached</div><div class="phone-upload-text" style="margin-top:4px;color:#C0392B;font-weight:600">Image ready</div></div>
-              <button class="phone-submit">Analyse with AI</button>
-              <div style="margin-top:10px;background:#FFF5F5;border:1px solid #FED7D7;border-radius:4px;padding:8px"><div style="font-size:8px;font-weight:700;color:#C53030;margin-bottom:3px">RESULT — STAGE 3</div><div style="font-size:8px;color:#742A2A;line-height:1.5">Gangrenous necrosis detected. Immediate referral required. SMS sent to Zinder Regional Hospital.</div></div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- ABOUT US -->
-<div class="section section-alt" id="team">
-  <div class="container">
-    <div class="who-grid">
-      <div class="who-text">
-        <div class="s-eyebrow">About this project</div>
-        <div class="s-title">Built for a problem that deserved better tools</div>
-        <p>NomaAlert was built by a team united around a single conviction: that a disease killing tens of thousands of children every year, that can be cured for less than a dollar, should not go undetected for lack of a piece of software.</p>
-        <p>We are not a medical organisation. We are engineers and designers who built the infrastructure that a trained public health response would need: an image triage pipeline, a WhatsApp diagnostic channel, a surveillance system, and a referral workflow that reaches the health worker wherever they are.</p>
-        <p>The backend runs on a 3-VM AI pipeline using Kimi K2.5 for vision classification and Kimi K2-Thinking for clinical reasoning, backed by Supabase for geospatial case storage, Twilio for SMS delivery, and Photon for WhatsApp Business API integration.</p>
-        <div class="acknowledgement"><p>We acknowledge the foundational work of the <strong>Noma Foundation (Amsterdam)</strong>, <strong>Médecins Sans Frontières</strong>, <strong>Operation Smile</strong>, and <strong>Facing Africa</strong> — organisations who have spent decades treating this disease. This project is an attempt to build tools worthy of that mission.</p></div>
-      </div>
-      <div>
-        <div class="team-card">
-          <div class="team-card-title">Technical architecture</div>
-          <div class="team-stack">
-            <div class="team-layer"><div class="team-layer-icon" style="background:var(--teal-bg)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#234E52" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M9 12l2 2 4-4"/></svg></div><div><div class="team-layer-name">Vision pipeline (VM 1)</div><div class="team-layer-desc">Kimi K2.5 · image → Stage 1–4 classification</div></div></div>
-            <div class="team-layer"><div class="team-layer-icon" style="background:var(--blue-bg)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1A56A0" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div><div><div class="team-layer-name">Clinical reasoning (VM 2–3)</div><div class="team-layer-desc">Kimi K2-Thinking · referral note generation</div></div></div>
-            <div class="team-layer"><div class="team-layer-icon" style="background:var(--green-bg)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1A5C3A" stroke-width="2" stroke-linecap="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg></div><div><div class="team-layer-name">Geospatial database</div><div class="team-layer-desc">Supabase · Haversine cluster detection</div></div></div>
-            <div class="team-layer"><div class="team-layer-icon" style="background:#FFF5F5"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#C53030" stroke-width="2" stroke-linecap="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.18 2 2 0 0 1 3.59 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.96a16 16 0 0 0 6.13 6.13l1.04-1.04a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg></div><div><div class="team-layer-name">Outbreak alerts (VM 4)</div><div class="team-layer-desc">Twilio SMS · fires on 3+ cases in 10km / 48h</div></div></div>
-            <div class="team-layer" style="border:1.5px solid rgba(37,211,102,.4);background:var(--green-bg)"><div class="team-layer-icon" style="background:#fff"><svg width="18" height="18" viewBox="0 0 24 24" fill="var(--wa)"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg></div><div><div class="team-layer-name" style="color:var(--green)">WhatsApp channel</div><div class="team-layer-desc">Photon · zero-app diagnostic access</div></div></div>
-            <div class="team-layer"><div class="team-layer-icon" style="background:var(--offwhite)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4A5568" stroke-width="2" stroke-linecap="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg></div><div><div class="team-layer-name">API layer</div><div class="team-layer-desc">Bun + Express · 5 routes · Bearer auth · Vercel</div></div></div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- CTA -->
-<div class="cta-band">
-  <div class="container">
-    <h2>Every minute of earlier detection saves a face — and a life</h2>
-    <p>NomaAlert is open to all community health workers operating in Noma-endemic regions. Screening is free. No installation required. Works on any smartphone — via web or WhatsApp.</p>
-    <div class="cta-actions">
-      <a class="btn-hero" href="#screen">Screen a patient</a>
-      <a class="btn-wa-hero" href="https://wa.me/1234567890" target="_blank">
-        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
-        Diagnose via WhatsApp
-      </a>
-    </div>
-  </div>
-</div>
-
-<!-- FOOTER -->
-<footer>
-  <div class="container">
-    <div class="footer-inner">
-      <div class="footer-left">
-        <p><strong>NomaAlert</strong> · AI-Powered Noma Disease Detection</p>
-        <p>Kimi K2 · Supabase · Twilio · Photon · Vercel</p>
-      </div>
-      <div style="display:flex;align-items:center;gap:16px">
-        <a class="footer-wa" href="https://wa.me/1234567890" target="_blank">
-          <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
-          Diagnose via WhatsApp
-        </a>
-        <div class="footer-links">
-          <a class="footer-link" href="#">Privacy</a>
-          <a class="footer-link" href="#">Contact</a>
-          <a class="footer-link" href="#">GitHub</a>
-          <a class="footer-link" href="#">API docs</a>
-        </div>
-      </div>
-    </div>
-    <div class="footer-disclaimer">
-      <p>NomaAlert is a decision-support tool for community health workers and does not constitute medical advice. All clinical decisions must be confirmed by a qualified healthcare professional. This project is not affiliated with the WHO, MSF, or any official health body.</p>
-    </div>
-  </div>
-</footer>
 
 <script src="firebase-config.js"></script>
 <script type="module">
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
 import { getAuth, RecaptchaVerifier, signInWithPhoneNumber } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 
-// firebase-config.js (gitignored) sets window.FIREBASE_CONFIG with real values
 const FIREBASE_CONFIG = window.FIREBASE_CONFIG ?? {
-  apiKey:            'REPLACE_WITH_FIREBASE_API_KEY',
-  authDomain:        'REPLACE_WITH_PROJECT_ID.firebaseapp.com',
-  projectId:         'REPLACE_WITH_PROJECT_ID',
+  apiKey: 'REPLACE_WITH_FIREBASE_API_KEY',
+  authDomain: 'REPLACE_WITH_PROJECT_ID.firebaseapp.com',
+  projectId: 'REPLACE_WITH_PROJECT_ID',
 };
 
 const firebaseApp  = initializeApp(FIREBASE_CONFIG);
 const firebaseAuth = getAuth(firebaseApp);
 
-const API_BASE = 'http://localhost:3001';
-let confirmationResult = null;
-
 window._firebaseAuth          = firebaseAuth;
 window._RecaptchaVerifier     = RecaptchaVerifier;
 window._signInWithPhoneNumber = signInWithPhoneNumber;
+let confirmationResult = null;
 window._setConfirmation = (r) => { confirmationResult = r; };
-window._getConfirmation = () => confirmationResult;</script>
+window._getConfirmation = () => confirmationResult;
+</script>
 
 <script>
-const API_BASE = window.API_BASE ?? 'http://localhost:3001';
+const API_BASE = 'http://localhost:3001';
 
 function handleUpload(e){
   const f=e.target.files[0];if(!f)return;
@@ -1063,119 +363,71 @@ function handleUpload(e){
   };
   r.readAsDataURL(f);
 }
+
 async function runAnalysis(){
-  // Validate required fields
   const ageVal = document.getElementById('field-age').value.trim();
   const region = document.getElementById('field-region').value.trim();
-  if (!ageVal || !region) {
-    alert('Please fill in patient age and village / region before analysing.');
-    return;
-  }
-
+  if(!ageVal||!region){ alert('Please fill in patient age and region.'); return; }
   const btn = document.querySelector('.analyze-btn');
-  btn.textContent = 'Analysing — please wait…';
-  btn.style.background = '#718096';
-  btn.disabled = true;
-
-  // Get GPS — fall back to 0,0 if denied
-  let lat = 0, lng = 0;
-  try {
-    const pos = await new Promise((resolve, reject) =>
-      navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 5000 })
-    );
-    lat = pos.coords.latitude;
-    lng = pos.coords.longitude;
-  } catch(_) {}
-
-  // Build payload
-  const image_b64 = document.getElementById('preview-img').src.split(',')[1] ?? '';
-  const notes     = document.getElementById('field-notes').value.trim();
-  const sex       = document.getElementById('field-sex').value;
-  const token     = localStorage.getItem('noma_token') ?? 'demo';
-
-  const payload = {
+  btn.textContent='Analysing — please wait…';btn.disabled=true;
+  let lat=0,lng=0;
+  try{
+    const pos=await new Promise((res,rej)=>navigator.geolocation.getCurrentPosition(res,rej,{timeout:5000}));
+    lat=pos.coords.latitude;lng=pos.coords.longitude;
+  }catch(_){}
+  const image_b64=document.getElementById('preview-img').src.split(',')[1]??'';
+  const token=localStorage.getItem('noma_token')?? 'demo';
+  const payload={
     image_b64,
-    child_meta: {
-      age_months:       Math.round(parseFloat(ageVal) * 12),
-      sex,
-      symptoms:         notes || region,
-      nutrition_status: 'unknown',
-    },
-    lat,
-    lng,
+    child_meta:{
+      age_months:Math.round(parseFloat(ageVal)*12),
+      sex:document.getElementById('field-sex').value,
+      symptoms:document.getElementById('field-notes').value.trim()||region,
+      nutrition_status:'unknown',
+    },lat,lng,
   };
-
-  try {
-    const res = await fetch(`${API_BASE}/api/screen`, {
-      method:  'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-      body:    JSON.stringify(payload),
+  try{
+    const res=await fetch(`${API_BASE}/api/screen`,{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':`Bearer ${token}`},
+      body:JSON.stringify(payload),
     });
-
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error ?? 'Screen API failed');
-
-    // Render result
-    const triageColour = { urgent: '#C53030', refer: '#92600A', monitor: '#1A56A0', healthy: '#1A5C3A' };
-    const stageLabel = `Stage ${data.stage} — ${data.triage.charAt(0).toUpperCase() + data.triage.slice(1)}`;
-    document.getElementById('result-stage').textContent = stageLabel;
-    document.getElementById('result-stage').style.color  = triageColour[data.triage] ?? '#C53030';
-    document.getElementById('result-text').textContent   = data.clinical_note;
-
-    if (data.clinic?.name) {
-      const clinicEl = document.getElementById('result-clinic');
-      clinicEl.textContent = `Nearest clinic: ${data.clinic.name} · ${data.clinic.distance_km} km · ${data.clinic.contact}`;
-      clinicEl.style.display = 'block';
+    const data=await res.json();
+    if(!res.ok) throw new Error(data.error??'Screen API failed');
+    const colours={urgent:'#e84040',refer:'#f59e0b',monitor:'#3b82f6',healthy:'#22c55e'};
+    document.getElementById('result-stage').textContent=`Stage ${data.stage} — ${data.triage.charAt(0).toUpperCase()+data.triage.slice(1)}`;
+    document.getElementById('result-stage').style.color=colours[data.triage]??'#e84040';
+    document.getElementById('result-text').textContent=data.clinical_note;
+    if(data.clinic?.name){
+      const el=document.getElementById('result-clinic');
+      el.textContent=`Nearest clinic: ${data.clinic.name} · ${data.clinic.distance_km} km · ${data.clinic.contact}`;
+      el.style.display='block';
     }
-
-    // Store referral note for copy button
-    window._referralNote = data.referral_note;
-
-    document.getElementById('preview-wrap').style.display = 'none';
-    document.getElementById('result-wrap').style.display  = 'block';
-  } catch(e) {
+    window._referralNote=data.referral_note;
+    sessionStorage.setItem('noma_result', JSON.stringify(data));
+    window.location.href = 'viewer.html';
+  }catch(e){
     alert(`Analysis failed: ${e.message}`);
-    btn.textContent = 'Analyse with AI pipeline →';
-    btn.style.background = '';
-    btn.disabled = false;
+    btn.textContent='Analyse with AI pipeline →';btn.disabled=false;
   }
 }
 
 function copyReferral(){
-  const note = window._referralNote;
-  if (!note) return;
-  navigator.clipboard.writeText(note).then(() => {
-    const btn = document.getElementById('sms-btn');
-    btn.textContent = 'Copied to clipboard ✓';
-    setTimeout(() => { btn.textContent = 'Copy referral note →'; }, 2000);
+  const note=window._referralNote;if(!note)return;
+  navigator.clipboard.writeText(note).then(()=>{
+    const btn=document.getElementById('sms-btn');
+    btn.textContent='Copied ✓';
+    setTimeout(()=>{btn.textContent='Copy referral note →';},2000);
   });
 }
-function loadPhoto(e,imgId,slot){
-  const f=e.target.files[0];if(!f)return;
-  const r=new FileReader();
-  r.onload=ev=>{
-    const img=document.getElementById(imgId);
-    img.src=ev.target.result;img.style.display='block';
-    slot.querySelector('.photo-placeholder').style.display='none';
-  };
-  r.readAsDataURL(f);
-}
-document.querySelectorAll('.nav-link').forEach(link=>{
-  link.addEventListener('click',function(){
-    document.querySelectorAll('.nav-link').forEach(l=>l.classList.remove('active'));
-    this.classList.add('active');
-  });
-});
 
-// LOGIN MODAL
-let selectedRole = null;
-let pinValue = '';
+// AUTH
+let selectedRole=null,pinValue='';
 
 function openLogin(){
   document.getElementById('login-modal').classList.add('open');
   document.body.style.overflow='hidden';
-  goToStep('step-role');
-  selectedRole=null;
+  goToStep('step-role');selectedRole=null;
   document.querySelectorAll('.role-btn').forEach(b=>b.classList.remove('selected'));
   document.getElementById('role-next-btn').disabled=true;
   document.getElementById('phone-input').value='';
@@ -1183,163 +435,201 @@ function openLogin(){
   document.getElementById('phone-error').style.display='none';
   resetPin();
 }
-function closeLogin(){
-  document.getElementById('login-modal').classList.remove('open');
-  document.body.style.overflow='';
-}
-function closeLoginSuccess(){
-  closeLogin();
-  document.getElementById('screen').scrollIntoView({behavior:'smooth'});
-}
-function handleOverlayClick(e){
-  if(e.target===document.getElementById('login-modal')) closeLogin();
-}
+function closeLogin(){document.getElementById('login-modal').classList.remove('open');document.body.style.overflow='';}
+function closeLoginSuccess(){closeLogin();document.getElementById('screen').scrollIntoView({behavior:'smooth'});}
+function handleOverlayClick(e){if(e.target===document.getElementById('login-modal'))closeLogin();}
 function goToStep(id){
   document.querySelectorAll('.login-step').forEach(s=>s.classList.remove('active'));
   document.getElementById(id).classList.add('active');
-  if(id==='step-phone'){
-    const isParent = selectedRole==='parent';
-    document.getElementById('phone-instruction').textContent = isParent
-      ? 'What is your phone number?'
-      : 'What is your worker phone number?';
-    document.getElementById('phone-hint').textContent = isParent
-      ? 'Type the number you use every day. We will send a 4-number code.'
-      : 'Enter the number registered with your health organisation.';
-  }
-  if(id==='step-pin'){
-    resetPin();
-    const phone = document.getElementById('phone-input').value.replace(/\D/g,'');
-    document.getElementById('pin-hint').textContent =
-      'We sent a 4-number code to ' + phone.slice(-4).padStart(phone.length,'*') + '. Enter it below.';
-    document.getElementById('pin-error').style.display='none';
-  }
+  if(id==='step-pin'){resetPin();document.getElementById('pin-error').style.display='none';}
 }
-function selectRole(role, el){
+function selectRole(role,el){
   selectedRole=role;
   document.querySelectorAll('.role-btn').forEach(b=>b.classList.remove('selected'));
   el.classList.add('selected');
   document.getElementById('role-next-btn').disabled=false;
 }
 function onPhoneInput(){
-  const val = document.getElementById('phone-input').value.replace(/\D/g,'');
-  document.getElementById('phone-next-btn').disabled = val.length < 8;
+  const val=document.getElementById('phone-input').value.replace(/\D/g,'');
+  document.getElementById('phone-next-btn').disabled=val.length<8;
   document.getElementById('phone-error').style.display='none';
 }
 function resetPin(){
   pinValue='';
-  for(let i=0;i<4;i++) document.getElementById('pd'+i).classList.remove('filled');
+  for(let i=0;i<6;i++){const d=document.getElementById('pd'+i);if(d)d.classList.remove('filled');}
 }
 function pinPress(digit){
-  if(pinValue.length>=6) return;
+  if(pinValue.length>=6)return;
   pinValue+=digit;
   document.getElementById('pd'+(pinValue.length-1)).classList.add('filled');
   document.getElementById('pin-error').style.display='none';
-  if(pinValue.length===6) setTimeout(checkPin,300);
+  if(pinValue.length===6)setTimeout(checkPin,300);
 }
 function pinDel(){
-  if(pinValue.length===0) return;
+  if(pinValue.length===0)return;
   document.getElementById('pd'+(pinValue.length-1)).classList.remove('filled');
   pinValue=pinValue.slice(0,-1);
 }
 async function requestOtp(){
-  const btn = document.getElementById('phone-next-btn');
-  const phone = document.getElementById('phone-input').value.trim();
-  btn.textContent = 'Sending…';
-  btn.disabled = true;
-  try {
-    if (!window._recaptchaVerifier) {
-      window._recaptchaVerifier = new window._RecaptchaVerifier(
-        window._firebaseAuth, 'phone-next-btn', { size: 'invisible' }
-      );
+  const btn=document.getElementById('phone-next-btn');
+  const phone=document.getElementById('phone-input').value.trim();
+  btn.textContent='Sending…';btn.disabled=true;
+  try{
+    if(!window._recaptchaVerifier){
+      window._recaptchaVerifier=new window._RecaptchaVerifier(window._firebaseAuth,'phone-next-btn',{size:'invisible'});
     }
-    const result = await window._signInWithPhoneNumber(window._firebaseAuth, phone, window._recaptchaVerifier);
+    const result=await window._signInWithPhoneNumber(window._firebaseAuth,phone,window._recaptchaVerifier);
     window._setConfirmation(result);
     goToStep('step-pin');
-  } catch(e) {
-    console.error('[auth] Firebase OTP error:', e);
-    document.getElementById('phone-error').textContent = 'Could not send code — check your number and try again.';
-    document.getElementById('phone-error').style.display = 'block';
-    window._recaptchaVerifier = null;
-  } finally {
-    btn.textContent = 'Send me a code';
-    btn.disabled = false;
+  }catch(e){
+    console.error('[auth]',e);
+    document.getElementById('phone-error').style.display='block';
+    window._recaptchaVerifier=null;
+  }finally{
+    btn.textContent='Send verification code';btn.disabled=false;
   }
 }
-
 async function checkPin(){
-  const confirmation = window._getConfirmation();
-  if (!confirmation) {
-    document.getElementById('pin-error').textContent = 'Session expired — please go back and request a new code.';
-    document.getElementById('pin-error').style.display = 'block';
-    resetPin();
-    return;
+  const confirmation=window._getConfirmation();
+  if(!confirmation){
+    document.getElementById('pin-error').textContent='Session expired — go back and request a new code.';
+    document.getElementById('pin-error').style.display='block';resetPin();return;
   }
-  try {
-    const credential = await confirmation.confirm(pinValue);
-    const idToken = await credential.user.getIdToken();
-
-    const res = await fetch(`${API_BASE}/api/auth/firebase`, {
-      method: 'POST',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ idToken }),
+  try{
+    const credential=await confirmation.confirm(pinValue);
+    const idToken=await credential.user.getIdToken();
+    const res=await fetch(`${API_BASE}/api/auth/firebase`,{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({idToken}),
     });
-    const data = await res.json();
-    if (!res.ok) {
-      document.getElementById('pin-error').textContent = data.error ?? 'Incorrect code — try again.';
-      document.getElementById('pin-error').style.display = 'block';
-      resetPin();
-      return;
+    const data=await res.json();
+    if(!res.ok){
+      document.getElementById('pin-error').textContent=data.error??'Incorrect code.';
+      document.getElementById('pin-error').style.display='block';resetPin();return;
     }
-    localStorage.setItem('noma_token', data.token);
-    localStorage.setItem('noma_name', data.name);
-    const isParent = selectedRole === 'parent';
-    document.getElementById('success-title').textContent = `Welcome, ${data.name}!`;
-    document.getElementById('success-body').textContent = isParent
-      ? 'You can now take a photograph of your child and our system will check them for free. It takes about 15 minutes.'
-      : 'You are signed in as a community health worker. You can now submit patient cases for screening.';
+    localStorage.setItem('noma_token',data.token);
+    localStorage.setItem('noma_name',data.name);
+    document.getElementById('success-title').textContent=`Welcome, ${data.name}.`;
+    document.getElementById('success-body').textContent=
+      selectedRole==='parent'
+        ?'You can now upload a photograph of your child for free AI screening.'
+        :'You are signed in as a community health worker. Submit patient cases below.';
     goToStep('step-success');
-  } catch(e) {
-    console.error('[auth] Firebase confirm error:', e);
-    document.getElementById('pin-error').textContent = 'Incorrect code — try again.';
-    document.getElementById('pin-error').style.display = 'block';
-    resetPin();
+  }catch(e){
+    console.error('[auth]',e);
+    document.getElementById('pin-error').textContent='Incorrect code — please try again.';
+    document.getElementById('pin-error').style.display='block';resetPin();
   }
 }
 
-function revealWaChat(){
-  const typing=document.getElementById('wa-typing');
-  const result=document.getElementById('wa-result');
-  const referral=document.getElementById('wa-referral');
-  const transport=document.getElementById('wa-transport');
-  const chat=document.getElementById('wa-chat');
-  setTimeout(()=>{
-    typing.style.display='none';
-    result.style.display='block';
-    chat.scrollTop=chat.scrollHeight;
-  },2800);
-  setTimeout(()=>{
-    referral.style.display='block';
-    chat.scrollTop=chat.scrollHeight;
-  },4200);
-  setTimeout(()=>{
-    transport.style.display='block';
-    chat.scrollTop=chat.scrollHeight;
-  },5400);
-}
-// Load live alert count
-fetch(`${API_BASE}/api/alerts?days=7`)
-  .then(r => r.json())
-  .then(data => {
-    const count = Array.isArray(data) ? data.length : (data.alerts?.length ?? 0);
-    document.getElementById('alert-count').textContent = count;
-  })
-  .catch(() => { document.getElementById('alert-count').textContent = '0'; });
+// initMouth3D is defined in the module script below and exposed on window
 
-const waSection=document.getElementById('whatsapp');
-const obs=new IntersectionObserver(entries=>{
-  if(entries[0].isIntersecting){revealWaChat();obs.disconnect();}
-},{threshold:0.3});
-obs.observe(waSection);
+// Alert badge
+fetch(`${API_BASE}/api/alerts?days=7`)
+  .then(r=>r.json())
+  .then(data=>{
+    const count=Array.isArray(data)?data.length:(data.meta?.count??data.alerts?.length??0);
+    document.getElementById('alert-count').textContent=count;
+  })
+  .catch(()=>{document.getElementById('alert-count').textContent='0';});
+</script>
+<script type="module">
+import * as THREE from 'https://esm.sh/three@0.158.0';
+import { GLTFLoader } from 'https://esm.sh/three@0.158.0/examples/jsm/loaders/GLTFLoader.js';
+import { OrbitControls } from 'https://esm.sh/three@0.158.0/examples/jsm/controls/OrbitControls.js';
+
+const DAMAGE_CFG = {
+  0: { mouthColor:0xffb8a0, emissive:0x000000, emissiveInt:0.0, roughness:0.65, lesionColor:null },
+  1: { mouthColor:0xff9090, emissive:0x7a0000, emissiveInt:0.25, roughness:0.72, lesionColor:0xff3030 },
+  2: { mouthColor:0xd96040, emissive:0x8B3000, emissiveInt:0.35, roughness:0.80, lesionColor:0xff6020 },
+  3: { mouthColor:0x8B3030, emissive:0x3a0000, emissiveInt:0.55, roughness:0.90, lesionColor:0xcc1010 },
+  4: { mouthColor:0x4a1a1a, emissive:0x1a0000, emissiveInt:0.65, roughness:0.96, lesionColor:0x880000 },
+  5: { mouthColor:0xd4a090, emissive:0x000000, emissiveInt:0.0,  roughness:0.85, lesionColor:null },
+};
+
+let _mouth3d = null;
+
+window.initMouth3D = function(stage, findings) {
+  const wrap = document.getElementById('mouth3d-wrap');
+  const canvas = document.getElementById('mouth3d-canvas');
+  wrap.style.display = 'block';
+
+  if (_mouth3d) { _mouth3d.renderer.dispose(); _mouth3d = null; }
+
+  const W = wrap.clientWidth || 400, H = 380;
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+  renderer.setSize(W, H);
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.outputColorSpace = THREE.SRGBColorSpace;
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.2;
+
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x050810);
+
+  const camera = new THREE.PerspectiveCamera(40, W / H, 0.01, 100);
+  camera.position.set(0, 0.02, 0.28);
+
+  scene.add(new THREE.AmbientLight(0xffffff, 0.6));
+  const key = new THREE.DirectionalLight(0xfff5ee, 1.4);
+  key.position.set(1, 2, 2); scene.add(key);
+  const fill = new THREE.DirectionalLight(0x8090ff, 0.4);
+  fill.position.set(-2, 0, 1); scene.add(fill);
+
+  const controls = new OrbitControls(camera, renderer.domElement);
+  controls.enableDamping = true; controls.dampingFactor = 0.08;
+  controls.minDistance = 0.1; controls.maxDistance = 0.8;
+  controls.addEventListener('start', () => { controls._interacted = true; });
+
+  const cfg = DAMAGE_CFG[Math.min(stage, 5)] || DAMAGE_CFG[0];
+  let lesionLight = null;
+  if (cfg.lesionColor && stage > 0) {
+    lesionLight = new THREE.PointLight(cfg.lesionColor, 2.5, 0.15);
+    const isLeft = findings && findings.some(f => /left/i.test(f));
+    lesionLight.position.set(isLeft ? -0.04 : 0.04, 0.01, 0.04);
+    scene.add(lesionLight);
+  }
+
+  new GLTFLoader().load('models/mouth/scene.gltf', gltf => {
+    const model = gltf.scene;
+    const box = new THREE.Box3().setFromObject(model);
+    const center = box.getCenter(new THREE.Vector3());
+    const size = box.getSize(new THREE.Vector3());
+    const scale = 0.18 / Math.max(size.x, size.y, size.z);
+    model.scale.setScalar(scale);
+    model.position.sub(center.multiplyScalar(scale));
+
+    model.traverse(child => {
+      if (!child.isMesh || child.material?.name !== 'mouth') return;
+      child.material = child.material.clone();
+      child.material.color.setHex(cfg.mouthColor);
+      child.material.emissive.setHex(cfg.emissive);
+      child.material.emissiveIntensity = cfg.emissiveInt;
+      child.material.roughness = cfg.roughness;
+      if (stage >= 2 && stage <= 4) {
+        child.userData.pulseBase = cfg.emissiveInt;
+        child.userData.pulseMat = child.material;
+      }
+    });
+    scene.add(model);
+    _mouth3d = { renderer, scene, camera, controls, model };
+
+    let t = 0;
+    (function animate() {
+      if (!_mouth3d) return;
+      requestAnimationFrame(animate);
+      t += 0.016;
+      controls.update();
+      if (!controls._interacted) model.rotation.y += 0.003;
+      if (lesionLight && stage >= 2) lesionLight.intensity = 2.0 + Math.sin(t * 2.5) * 0.8;
+      model.traverse(c => {
+        if (c.userData.pulseMat)
+          c.userData.pulseMat.emissiveIntensity = c.userData.pulseBase + Math.sin(t * 1.8) * 0.12;
+      });
+      renderer.render(scene, camera);
+    })();
+  }, undefined, err => { console.warn('[3D]', err); wrap.style.display = 'none'; });
+};
 </script>
 </body>
 </html>

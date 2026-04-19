@@ -3,12 +3,9 @@
  */
 
 import { Router, Request, Response } from 'express';
-import { requireAuth } from '../lib/auth';
 import { supabase } from '../lib/supabase';
 
 export const alertsRouter = Router();
-
-alertsRouter.use(requireAuth);
 
 // GET /api/alerts?days=30
 alertsRouter.get('/', async (req: Request, res: Response) => {

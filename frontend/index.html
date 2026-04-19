@@ -450,6 +450,8 @@ footer{background:var(--navy);padding:32px 0;border-top:1px solid rgba(255,255,2
           <div class="pin-dot" id="pd1"></div>
           <div class="pin-dot" id="pd2"></div>
           <div class="pin-dot" id="pd3"></div>
+          <div class="pin-dot" id="pd4"></div>
+          <div class="pin-dot" id="pd5"></div>
         </div>
         <div class="pin-pad">
           <div class="pin-key" onclick="pinPress('1')">1</div>
@@ -513,7 +515,7 @@ footer{background:var(--navy);padding:32px 0;border-top:1px solid rgba(255,255,2
         <a class="nav-link" href="#team">About us</a>
       </div>
       <div class="nav-cta">
-        <div class="nav-alert-btn"><div class="pulse"></div>3 active alerts</div>
+        <div class="nav-alert-btn" id="alert-badge"><div class="pulse"></div><span id="alert-count">…</span> active alerts</div>
         <a class="btn-wa-nav" href="https://wa.me/1234567890" target="_blank">
           <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
           Diagnose via WhatsApp
@@ -557,11 +559,11 @@ footer{background:var(--navy);padding:32px 0;border-top:1px solid rgba(255,255,2
         </div>
         <div class="uc-body">
           <div class="form-row">
-            <div class="fld"><label>Patient age</label><input type="number" placeholder="e.g. 6" min="0" max="18"/></div>
-            <div class="fld"><label>Sex</label><select><option>Male</option><option>Female</option></select></div>
+            <div class="fld"><label>Patient age</label><input id="field-age" type="number" placeholder="e.g. 6" min="0" max="18"/></div>
+            <div class="fld"><label>Sex</label><select id="field-sex"><option value="male">Male</option><option value="female">Female</option></select></div>
           </div>
-          <div class="fld" style="margin-bottom:10px"><label>Village / region</label><input type="text" placeholder="e.g. Zinder Region, Niger"/></div>
-          <div class="fld" style="margin-bottom:4px"><label>Clinical notes (optional)</label><textarea placeholder="Describe symptoms observed — swelling, discolouration, lesions…"></textarea></div>
+          <div class="fld" style="margin-bottom:10px"><label>Village / region</label><input id="field-region" type="text" placeholder="e.g. Zinder Region, Niger"/></div>
+          <div class="fld" style="margin-bottom:4px"><label>Clinical notes (optional)</label><textarea id="field-notes" placeholder="Describe symptoms observed — swelling, discolouration, lesions…"></textarea></div>
           <div class="upload-zone" onclick="document.getElementById('main-img').click()">
             <div class="uz-icon">
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1A56A0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
@@ -576,9 +578,10 @@ footer{background:var(--navy);padding:32px 0;border-top:1px solid rgba(255,255,2
             <button class="analyze-btn" onclick="runAnalysis()">Analyse with AI pipeline →</button>
           </div>
           <div class="result-wrap" id="result-wrap">
-            <div class="result-stage">Stage 3 — Moderate to severe</div>
-            <div class="result-text">Soft tissue necrosis extending to the left cheek with evidence of gangrenous progression. Immediate referral to hospital required. Referral note generated and ready to send.</div>
-            <button class="sms-btn">Send SMS referral to nearest clinic →</button>
+            <div class="result-stage" id="result-stage">—</div>
+            <div class="result-text" id="result-text">—</div>
+            <div id="result-clinic" style="font-size:11px;color:#742A2A;margin-bottom:8px;display:none"></div>
+            <button class="sms-btn" id="sms-btn" onclick="copyReferral()">Copy referral note →</button>
           </div>
         </div>
       </div>
@@ -1023,11 +1026,13 @@ footer{background:var(--navy);padding:32px 0;border-top:1px solid rgba(255,255,2
   </div>
 </footer>
 
+<script src="firebase-config.js"></script>
 <script type="module">
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
 import { getAuth, RecaptchaVerifier, signInWithPhoneNumber } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 
-const FIREBASE_CONFIG = {
+// firebase-config.js (gitignored) sets window.FIREBASE_CONFIG with real values
+const FIREBASE_CONFIG = window.FIREBASE_CONFIG ?? {
   apiKey:            'REPLACE_WITH_FIREBASE_API_KEY',
   authDomain:        'REPLACE_WITH_PROJECT_ID.firebaseapp.com',
   projectId:         'REPLACE_WITH_PROJECT_ID',
@@ -1039,7 +1044,9 @@ const firebaseAuth = getAuth(firebaseApp);
 const API_BASE = 'http://localhost:3001';
 let confirmationResult = null;
 
-window._firebaseAuth = firebaseAuth;
+window._firebaseAuth          = firebaseAuth;
+window._RecaptchaVerifier     = RecaptchaVerifier;
+window._signInWithPhoneNumber = signInWithPhoneNumber;
 window._setConfirmation = (r) => { confirmationResult = r; };
 window._getConfirmation = () => confirmationResult;</script>
 
@@ -1056,15 +1063,92 @@ function handleUpload(e){
   };
   r.readAsDataURL(f);
 }
-function runAnalysis(){
-  const btn=document.querySelector('.analyze-btn');
-  btn.textContent='Analysing image — please wait…';
-  btn.style.background='#718096';
-  btn.disabled=true;
-  setTimeout(()=>{
-    document.getElementById('preview-wrap').style.display='none';
-    document.getElementById('result-wrap').style.display='block';
-  },2600);
+async function runAnalysis(){
+  // Validate required fields
+  const ageVal = document.getElementById('field-age').value.trim();
+  const region = document.getElementById('field-region').value.trim();
+  if (!ageVal || !region) {
+    alert('Please fill in patient age and village / region before analysing.');
+    return;
+  }
+
+  const btn = document.querySelector('.analyze-btn');
+  btn.textContent = 'Analysing — please wait…';
+  btn.style.background = '#718096';
+  btn.disabled = true;
+
+  // Get GPS — fall back to 0,0 if denied
+  let lat = 0, lng = 0;
+  try {
+    const pos = await new Promise((resolve, reject) =>
+      navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 5000 })
+    );
+    lat = pos.coords.latitude;
+    lng = pos.coords.longitude;
+  } catch(_) {}
+
+  // Build payload
+  const image_b64 = document.getElementById('preview-img').src.split(',')[1] ?? '';
+  const notes     = document.getElementById('field-notes').value.trim();
+  const sex       = document.getElementById('field-sex').value;
+  const token     = localStorage.getItem('noma_token') ?? 'demo';
+
+  const payload = {
+    image_b64,
+    child_meta: {
+      age_months:       Math.round(parseFloat(ageVal) * 12),
+      sex,
+      symptoms:         notes || region,
+      nutrition_status: 'unknown',
+    },
+    lat,
+    lng,
+  };
+
+  try {
+    const res = await fetch(`${API_BASE}/api/screen`, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      body:    JSON.stringify(payload),
+    });
+
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error ?? 'Screen API failed');
+
+    // Render result
+    const triageColour = { urgent: '#C53030', refer: '#92600A', monitor: '#1A56A0', healthy: '#1A5C3A' };
+    const stageLabel = `Stage ${data.stage} — ${data.triage.charAt(0).toUpperCase() + data.triage.slice(1)}`;
+    document.getElementById('result-stage').textContent = stageLabel;
+    document.getElementById('result-stage').style.color  = triageColour[data.triage] ?? '#C53030';
+    document.getElementById('result-text').textContent   = data.clinical_note;
+
+    if (data.clinic?.name) {
+      const clinicEl = document.getElementById('result-clinic');
+      clinicEl.textContent = `Nearest clinic: ${data.clinic.name} · ${data.clinic.distance_km} km · ${data.clinic.contact}`;
+      clinicEl.style.display = 'block';
+    }
+
+    // Store referral note for copy button
+    window._referralNote = data.referral_note;
+
+    document.getElementById('preview-wrap').style.display = 'none';
+    document.getElementById('result-wrap').style.display  = 'block';
+  } catch(e) {
+    alert(`Analysis failed: ${e.message}`);
+    btn.textContent = 'Analyse with AI pipeline →';
+    btn.style.background = '';
+    btn.disabled = false;
+  }
+}
+
+function copyReferral(){
+  const note = window._referralNote;
+  if (!note) return;
+  navigator.clipboard.writeText(note).then(() => {
+    const btn = document.getElementById('sms-btn');
+    btn.textContent = 'Copied to clipboard ✓';
+    setTimeout(() => { btn.textContent = 'Copy referral note →'; }, 2000);
+  });
 }
 function loadPhoto(e,imgId,slot){
   const f=e.target.files[0];if(!f)return;
@@ -1146,11 +1230,11 @@ function resetPin(){
   for(let i=0;i<4;i++) document.getElementById('pd'+i).classList.remove('filled');
 }
 function pinPress(digit){
-  if(pinValue.length>=4) return;
+  if(pinValue.length>=6) return;
   pinValue+=digit;
   document.getElementById('pd'+(pinValue.length-1)).classList.add('filled');
   document.getElementById('pin-error').style.display='none';
-  if(pinValue.length===4) setTimeout(checkPin,300);
+  if(pinValue.length===6) setTimeout(checkPin,300);
 }
 function pinDel(){
   if(pinValue.length===0) return;
@@ -1163,14 +1247,12 @@ async function requestOtp(){
   btn.textContent = 'Sending…';
   btn.disabled = true;
   try {
-    // Invisible reCAPTCHA required by Firebase phone auth
     if (!window._recaptchaVerifier) {
-      window._recaptchaVerifier = new (await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js')).RecaptchaVerifier(
+      window._recaptchaVerifier = new window._RecaptchaVerifier(
         window._firebaseAuth, 'phone-next-btn', { size: 'invisible' }
       );
     }
-    const result = await (await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js'))
-      .signInWithPhoneNumber(window._firebaseAuth, phone, window._recaptchaVerifier);
+    const result = await window._signInWithPhoneNumber(window._firebaseAuth, phone, window._recaptchaVerifier);
     window._setConfirmation(result);
     goToStep('step-pin');
   } catch(e) {
@@ -1244,6 +1326,15 @@ function revealWaChat(){
     chat.scrollTop=chat.scrollHeight;
   },5400);
 }
+// Load live alert count
+fetch(`${API_BASE}/api/alerts?days=7`)
+  .then(r => r.json())
+  .then(data => {
+    const count = Array.isArray(data) ? data.length : (data.alerts?.length ?? 0);
+    document.getElementById('alert-count').textContent = count;
+  })
+  .catch(() => { document.getElementById('alert-count').textContent = '0'; });
+
 const waSection=document.getElementById('whatsapp');
 const obs=new IntersectionObserver(entries=>{
   if(entries[0].isIntersecting){revealWaChat();obs.disconnect();}

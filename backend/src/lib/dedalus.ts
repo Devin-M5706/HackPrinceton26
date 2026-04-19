@@ -26,6 +26,19 @@ const EXEC_TIMEOUT_MS = 60_000;
 
 // ── Raw HTTP helpers ──────────────────────────────────────────────────────────
 
+export async function destroyAllVms(): Promise<void> {
+  try {
+    const machines = await dcsGet<{ machines: { machine_id: string }[] }>('/machines');
+    const ids = machines.machines?.map((m) => m.machine_id) ?? [];
+    if (ids.length > 0) {
+      console.log(`[dedalus] Cleaning up ${ids.length} stale VM(s):`, ids.join(', '));
+      await Promise.all(ids.map((id) => dcsDelete(`/machines/${id}`)));
+    }
+  } catch (err) {
+    console.warn('[dedalus] Could not list/clean stale VMs:', (err as Error).message);
+  }
+}
+
 async function dcsGet<T>(path: string): Promise<T> {
   const res = await fetch(`${DCS_BASE}/v1${path}`, {
     headers: { 'x-api-key': API_KEY() },
@@ -37,7 +50,11 @@ async function dcsGet<T>(path: string): Promise<T> {
 async function dcsPost<T>(path: string, body: unknown): Promise<T> {
   const res = await fetch(`${DCS_BASE}/v1${path}`, {
     method: 'POST',
-    headers: { 'x-api-key': API_KEY(), 'Content-Type': 'application/json' },
+    headers: {
+      'x-api-key': API_KEY(),
+      'Content-Type': 'application/json',
+      'Idempotency-Key': crypto.randomUUID(),
+    },
     body: JSON.stringify(body),
   });
   if (!res.ok) throw new Error(`DCS POST ${path} → ${res.status}: ${await res.text()}`);
@@ -45,11 +62,21 @@ async function dcsPost<T>(path: string, body: unknown): Promise<T> {
 }
 
 async function dcsDelete(path: string): Promise<void> {
-  const res = await fetch(`${DCS_BASE}/v1${path}`, {
-    method: 'DELETE',
+  const getRes = await fetch(`${DCS_BASE}/v1${path}`, {
     headers: { 'x-api-key': API_KEY() },
   });
-  if (!res.ok && res.status !== 404) {
+  if (!getRes.ok) return;
+  const etag = (getRes.headers.get('etag') ?? '').replace(/^W\//, '');
+
+  const res = await fetch(`${DCS_BASE}/v1${path}`, {
+    method: 'DELETE',
+    headers: {
+      'x-api-key': API_KEY(),
+      'Idempotency-Key': crypto.randomUUID(),
+      'If-Match': etag,
+    },
+  });
+  if (!res.ok && res.status !== 404 && res.status !== 202) {
     throw new Error(`DCS DELETE ${path} → ${res.status}`);
   }
 }
@@ -133,7 +160,7 @@ async function pollExecution(machineId: string, execId: string): Promise<string>
       const out = await dcsGet<{ stdout: string; stderr?: string }>(
         `/machines/${machineId}/executions/${execId}/output`,
       ).catch(() => ({ stdout: '', stderr: 'unknown' }));
-      throw new Error(`Execution failed: ${out.stderr}`);
+      throw new Error(`Execution failed — stderr: ${out.stderr ?? '(none)'} | stdout: ${out.stdout ?? '(none)'}`);
     }
     if (exec.status === 'timed_out') throw new Error('Execution timed out');
     await sleep(POLL_INTERVAL_MS);

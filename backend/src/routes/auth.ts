@@ -51,16 +51,40 @@ authRouter.post('/firebase', async (req: Request, res: Response) => {
     return;
   }
 
+  // In mock mode skip Supabase and return a demo CHW
+  if (process.env.MOCK_MODE === 'true') {
+    res.json({ token: 'demo', name: 'Demo CHW', region: 'zinder', language: 'english' });
+    return;
+  }
+
   // Look up CHW by phone
-  const { data: chw, error } = await supabase()
+  let { data: chw, error } = await supabase()
     .from('chws')
     .select('id, name, region, language, auth_token')
     .eq('phone', phone)
     .single();
 
-  if (error || !chw) {
-    res.status(404).json({ error: 'No account found for this phone number' });
-    return;
+  // Auto-register on first login
+  if (!chw) {
+    const token = `chw_${Buffer.from(phone).toString('base64').replace(/[^a-zA-Z0-9]/g, '').slice(0, 24)}`;
+    const { data: newChw, error: insertError } = await supabase()
+      .from('chws')
+      .insert({
+        phone,
+        name:       `CHW ${phone.slice(-4)}`,
+        region:     'unknown',
+        language:   'english',
+        auth_token: token,
+      })
+      .select('id, name, region, language, auth_token')
+      .single();
+
+    if (insertError || !newChw) {
+      console.error('[auth] Auto-register failed:', insertError);
+      res.status(500).json({ error: 'Failed to create account' });
+      return;
+    }
+    chw = newChw;
   }
 
   res.json({

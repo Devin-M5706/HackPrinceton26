@@ -105,71 +105,78 @@ screenRouter.post('/', requireAuth, async (req: Request, res: Response) => {
     clinicalResult = MOCK_CLINICAL;
     referralResult = MOCK_REFERRAL;
   } else {
-    // ── VM 1: vision ──────────────────────────────────────────────────────────
-    const vm1 = await acquireVm();
     try {
-      const raw = await runScript({
-        machineId: vm1.machineId,
-        script: VISION_AGENT,
-        env: {
-          IMAGE_B64: body.image_b64,
-          DEDALUS_API_KEY: process.env.DEDALUS_API_KEY!,
-        },
-        timeoutMs: 45_000,
-      });
-      visionResult = JSON.parse(raw) as VisionResult;
-    } catch (err) {
-      console.error('[screen] Vision VM failed:', err);
-      visionResult = { ...MOCK_VISION, error: String(err) };
-    } finally {
-      await releaseVm(vm1.machineId, vm1.fromPool);
-    }
+      // ── VM 1: vision ────────────────────────────────────────────────────────
+      const vm1 = await acquireVm();
+      try {
+        const raw = await runScript({
+          machineId: vm1.machineId,
+          script: VISION_AGENT,
+          env: {
+            IMAGE_B64: body.image_b64,
+            DEDALUS_API_KEY: process.env.DEDALUS_API_KEY!,
+          },
+          timeoutMs: 45_000,
+        });
+        visionResult = JSON.parse(raw) as VisionResult;
+      } catch (err) {
+        console.error('[screen] Vision VM failed:', err);
+        visionResult = { ...MOCK_VISION, error: String(err) };
+      } finally {
+        await releaseVm(vm1.machineId, vm1.fromPool);
+      }
 
-    // ── VM 2: clinical ────────────────────────────────────────────────────────
-    const vm2 = await acquireVm();
-    try {
-      const raw = await runScript({
-        machineId: vm2.machineId,
-        script: CLINICAL_AGENT,
-        env: {
-          VISION_JSON: JSON.stringify(visionResult),
-          CHILD_META_JSON: JSON.stringify(body.child_meta),
-          DEDALUS_API_KEY: process.env.DEDALUS_API_KEY!,
-        },
-        timeoutMs: 70_000,
-      });
-      clinicalResult = JSON.parse(raw) as ClinicalResult;
-    } catch (err) {
-      console.error('[screen] Clinical VM failed:', err);
-      clinicalResult = { ...MOCK_CLINICAL, error: String(err) };
-    } finally {
-      await releaseVm(vm2.machineId, vm2.fromPool);
-    }
+      // ── VM 2: clinical ──────────────────────────────────────────────────────
+      const vm2 = await acquireVm();
+      try {
+        const raw = await runScript({
+          machineId: vm2.machineId,
+          script: CLINICAL_AGENT,
+          env: {
+            VISION_JSON: JSON.stringify(visionResult),
+            CHILD_META_JSON: JSON.stringify(body.child_meta),
+            DEDALUS_API_KEY: process.env.DEDALUS_API_KEY!,
+          },
+          timeoutMs: 70_000,
+        });
+        clinicalResult = JSON.parse(raw) as ClinicalResult;
+      } catch (err) {
+        console.error('[screen] Clinical VM failed:', err);
+        clinicalResult = { ...MOCK_CLINICAL, error: String(err) };
+      } finally {
+        await releaseVm(vm2.machineId, vm2.fromPool);
+      }
 
-    // ── VM 3: referral ────────────────────────────────────────────────────────
-    const vm3 = await acquireVm();
-    try {
-      const raw = await runScript({
-        machineId: vm3.machineId,
-        script: REFERRAL_AGENT,
-        env: {
-          CLINICAL_JSON: JSON.stringify(clinicalResult),
-          CHW_REGION: chw.region,
-          CHW_LANGUAGE: chw.language,
-          CHW_LAT: String(lat),
-          CHW_LNG: String(lng),
-          DEDALUS_API_KEY: process.env.DEDALUS_API_KEY!,
-          SUPABASE_URL: process.env.SUPABASE_URL!,
-          SUPABASE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY!,
-        },
-        timeoutMs: 35_000,
-      });
-      referralResult = JSON.parse(raw) as ReferralResult;
+      // ── VM 3: referral ──────────────────────────────────────────────────────
+      const vm3 = await acquireVm();
+      try {
+        const raw = await runScript({
+          machineId: vm3.machineId,
+          script: REFERRAL_AGENT,
+          env: {
+            CLINICAL_JSON: JSON.stringify(clinicalResult),
+            CHW_REGION: chw.region,
+            CHW_LANGUAGE: chw.language,
+            CHW_LAT: String(lat),
+            CHW_LNG: String(lng),
+            DEDALUS_API_KEY: process.env.DEDALUS_API_KEY!,
+            SUPABASE_URL: process.env.SUPABASE_URL!,
+            SUPABASE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY!,
+          },
+          timeoutMs: 35_000,
+        });
+        referralResult = JSON.parse(raw) as ReferralResult;
+      } catch (err) {
+        console.error('[screen] Referral VM failed:', err);
+        referralResult = MOCK_REFERRAL;
+      } finally {
+        await releaseVm(vm3.machineId, vm3.fromPool);
+      }
     } catch (err) {
-      console.error('[screen] Referral VM failed:', err);
+      console.error('[screen] VM pipeline unavailable — falling back to mock:', err);
+      visionResult = MOCK_VISION;
+      clinicalResult = MOCK_CLINICAL;
       referralResult = MOCK_REFERRAL;
-    } finally {
-      await releaseVm(vm3.machineId, vm3.fromPool);
     }
   }
 

@@ -4,9 +4,9 @@
   "description": "NomaAlert orchestrator — Dedalus VM swarm + Kimi K2.5 + Supabase",
   "main": "dist/index.js",
   "scripts": {
-    "dev": "bun run --hot src/index.ts",
-    "build": "bun build src/index.ts --outdir dist --target node",
-    "start": "bun run dist/index.js",
+    "dev": "tsx src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
@@ -24,6 +24,8 @@
     "@types/cors": "^2.8.17",
     "@types/express": "^4.17.21",
     "@types/node": "^20.14.0",
+    "ts-node": "^10.9.2",
+    "tsx": "^4.7.0",
     "typescript": "^5.4.5"
   }
 }

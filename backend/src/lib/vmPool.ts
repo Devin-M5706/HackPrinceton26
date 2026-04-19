@@ -9,9 +9,9 @@
  * cold function invocation — use mock mode or a dedicated VM deployment there.
  */
 
-import { createVm, destroyVm } from './dedalus';
+import { createVm, destroyVm, destroyAllVms } from './dedalus';
 
-const POOL_SIZE = 3;
+const POOL_SIZE = 1;
 
 interface PoolEntry {
   machineId: string;
@@ -26,6 +26,7 @@ let poolError: Error | null = null;
 
 /** Call once at server start. Resolves when all VMs are warm and ready. */
 export async function initVmPool(): Promise<void> {
+  await destroyAllVms();
   console.log(`[vmPool] Spinning up ${POOL_SIZE} warm VMs…`);
   try {
     const ids = await Promise.all(

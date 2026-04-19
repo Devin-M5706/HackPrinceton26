@@ -23,8 +23,9 @@
  *   4. Spaces survive for the lifetime of the Node.js process (VM 4 stays alive indefinitely).
  */
 
-import { Spectrum } from 'spectrum-ts';
-import { imessage } from 'spectrum-ts/providers/imessage';
+// spectrum-ts (iMessage) disabled — incompatible with Node 24
+// import { Spectrum } from 'spectrum-ts';
+// import { imessage } from 'spectrum-ts/providers/imessage';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -36,76 +37,16 @@ export interface AlertPayload {
   center_lng: number;
 }
 
-// Minimal structural type for a Spectrum Space — avoids relying on exported types
-// that may shift between preview releases of spectrum-ts.
-type SpectrumSpace = { send: (msg: string) => Promise<void> };
-
 // ── iMessage subscriber registry ──────────────────────────────────────────────
-// Keyed by sender ID so each subscriber gets exactly one entry.
-// Map survives for the lifetime of the process (VM 4 / long-lived server).
 
+type SpectrumSpace = { send: (msg: string) => Promise<void> };
 const _subscribers = new Map<string, SpectrumSpace>();
-let _spectrumApp: Awaited<ReturnType<typeof Spectrum>> | null = null;
 let _spectrumStarted = false;
 
-/**
- * Start the Photon Spectrum iMessage listener.
- * Safe to call multiple times — only initialises once.
- *
- * When a health authority texts any message to the bot number,
- * their space is registered and they receive a confirmation reply.
- */
 export async function startPhotonListener(): Promise<void> {
   if (_spectrumStarted) return;
   _spectrumStarted = true;
-
-  const projectId = process.env.PHOTON_PROJECT_ID;
-  const projectSecret = process.env.PHOTON_PROJECT_SECRET;
-
-  if (!projectId || !projectSecret) {
-    console.log('[notify] PHOTON_PROJECT_ID / PHOTON_PROJECT_SECRET not set — iMessage alerts disabled');
-    return;
-  }
-
-  try {
-    _spectrumApp = await Spectrum({
-      projectId,
-      projectSecret,
-      providers: [imessage.config()],
-    });
-
-    console.log('[notify] Photon Spectrum iMessage listener started');
-
-    // Process incoming messages in the background — never blocks the server.
-    (async () => {
-      if (!_spectrumApp) return;
-      for await (const [space, message] of _spectrumApp.messages) {
-        const senderId: string = (message.sender as { id: string }).id ?? 'unknown';
-        const key = `imessage:${senderId}`;
-
-        if (!_subscribers.has(key)) {
-          _subscribers.set(key, space as unknown as SpectrumSpace);
-          console.log(`[notify] iMessage subscriber registered: ${senderId}`);
-          await space.send(
-            '✅ You are now subscribed to NomaAlert outbreak alerts. ' +
-            'You will automatically receive a message whenever a Noma cluster ' +
-            'is detected in your region. Reply STOP at any time to unsubscribe.',
-          );
-        } else if (
-          typeof message.content === 'object' &&
-          (message.content as { text?: string }).text?.trim().toUpperCase() === 'STOP'
-        ) {
-          _subscribers.delete(key);
-          await space.send('You have been unsubscribed from NomaAlert alerts.');
-          console.log(`[notify] iMessage subscriber removed: ${senderId}`);
-        }
-      }
-    })().catch((err: Error) =>
-      console.error('[notify] Photon Spectrum listener error:', err.message),
-    );
-  } catch (err) {
-    console.error('[notify] Failed to start Photon Spectrum:', err);
-  }
+  console.log('[notify] iMessage (Photon Spectrum) disabled — not compatible with Node 24');
 }
 
 export function iMessageSubscriberCount(): number {

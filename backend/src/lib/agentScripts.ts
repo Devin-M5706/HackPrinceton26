@@ -52,7 +52,7 @@ req = urllib.request.Request(
     'https://api.dedaluslabs.ai/v1/chat/completions',
     data=payload,
     headers={
-        'x-api-key': api_key,
+        'Authorization': f'Bearer {api_key}',
         'Content-Type': 'application/json'
     }
 )
@@ -75,7 +75,7 @@ except Exception as e:
         "error": str(e)
     }
     print(json.dumps(fallback))
-    sys.exit(1)
+    sys.exit(0)
 `;
 
 // ── VM 2 — Clinical reasoning agent ──────────────────────────────────────────
@@ -123,7 +123,7 @@ req = urllib.request.Request(
     'https://api.dedaluslabs.ai/v1/chat/completions',
     data=payload,
     headers={
-        'x-api-key': api_key,
+        'Authorization': f'Bearer {api_key}',
         'Content-Type': 'application/json'
     }
 )
@@ -146,7 +146,7 @@ except Exception as e:
         "error": str(e)
     }
     print(json.dumps(fallback))
-    sys.exit(1)
+    sys.exit(0)
 `;
 
 // ── VM 3 — Referral agent ─────────────────────────────────────────────────────
@@ -231,7 +231,7 @@ req2 = urllib.request.Request(
     'https://api.dedaluslabs.ai/v1/chat/completions',
     data=payload,
     headers={
-        'x-api-key': api_key,
+        'Authorization': f'Bearer {api_key}',
         'Content-Type': 'application/json'
     }
 )

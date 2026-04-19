@@ -10,6 +10,9 @@ HackPrinceton26/dist/
 .env
 .env.local
 
+# Firebase web credentials (local only — do not commit)
+frontend/firebase-config.js
+
 # Bun
 bun.lockb
 

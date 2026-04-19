@@ -72,12 +72,14 @@ import { GLTFLoader } from 'https://esm.sh/three@0.158.0/examples/jsm/loaders/GL
 import { OrbitControls } from 'https://esm.sh/three@0.158.0/examples/jsm/controls/OrbitControls.js';
 
 const DAMAGE_CFG = {
-  0: { mouthColor:0xffb8a0, emissive:0x000000, emissiveInt:0.0, roughness:0.65, lesionColor:null },
-  1: { mouthColor:0xff9090, emissive:0x7a0000, emissiveInt:0.25, roughness:0.72, lesionColor:0xff3030 },
-  2: { mouthColor:0xd96040, emissive:0x8B3000, emissiveInt:0.35, roughness:0.80, lesionColor:0xff6020 },
-  3: { mouthColor:0x8B3030, emissive:0x3a0000, emissiveInt:0.55, roughness:0.90, lesionColor:0xcc1010 },
-  4: { mouthColor:0x4a1a1a, emissive:0x1a0000, emissiveInt:0.65, roughness:0.96, lesionColor:0x880000 },
-  5: { mouthColor:0xd4a090, emissive:0x000000, emissiveInt:0.0,  roughness:0.85, lesionColor:null },
+  //                                                                  teeth right side
+  //                    mouth     emissive    eInt   rough  lesion    color      emissive   roughness
+  0: { mouthColor:0xffb8a0, emissive:0x000000, emissiveInt:0.0,  roughness:0.65, lesionColor:null,     teethColor:0xfff8f0, teethEmissive:0x000000, teethEmissiveInt:0.0,  teethRoughness:0.30 },
+  1: { mouthColor:0xff9090, emissive:0x7a0000, emissiveInt:0.25, roughness:0.72, lesionColor:0xff3030, teethColor:0xe8d5a0, teethEmissive:0x1a0a00, teethEmissiveInt:0.10, teethRoughness:0.50 },
+  2: { mouthColor:0xd96040, emissive:0x8B3000, emissiveInt:0.35, roughness:0.80, lesionColor:0xff6020, teethColor:0xb8853a, teethEmissive:0x2a1000, teethEmissiveInt:0.20, teethRoughness:0.70 },
+  3: { mouthColor:0x8B3030, emissive:0x3a0000, emissiveInt:0.55, roughness:0.90, lesionColor:0xcc1010, teethColor:0x6b3a1a, teethEmissive:0x1a0800, teethEmissiveInt:0.30, teethRoughness:0.88 },
+  4: { mouthColor:0x4a1a1a, emissive:0x1a0000, emissiveInt:0.65, roughness:0.96, lesionColor:0x880000, teethColor:0x2a1008, teethEmissive:0x080200, teethEmissiveInt:0.40, teethRoughness:0.97 },
+  5: { mouthColor:0xd4a090, emissive:0x000000, emissiveInt:0.0,  roughness:0.85, lesionColor:null,     teethColor:0xd4c090, teethEmissive:0x000000, teethEmissiveInt:0.0,  teethRoughness:0.60 },
 };
 
 const TRIAGE_COLOR = { urgent:'#e84040', refer:'#f59e0b', monitor:'#3b82f6', healthy:'#22c55e' };
@@ -148,6 +150,15 @@ if (cfg.lesionColor && stage > 0) {
   scene.add(lesionLight);
 }
 
+// Dark absorption light on right-side teeth for stage >= 1
+let teethDarkLight = null;
+if (stage >= 1) {
+  // Negative-intensity trick: a very dark point light on the right dental arch
+  teethDarkLight = new THREE.PointLight(0x000000, 0, 0.12);
+  teethDarkLight.position.set(0.06, -0.01, 0.04);
+  scene.add(teethDarkLight);
+}
+
 new GLTFLoader().load('models/mouth/scene.gltf', gltf => {
   const model = gltf.scene;
   const box = new THREE.Box3().setFromObject(model);
@@ -159,7 +170,14 @@ new GLTFLoader().load('models/mouth/scene.gltf', gltf => {
 
   model.traverse(child => {
     if (!child.isMesh) return;
-    if (child.material?.name === 'mouth') {
+
+    const matName = (child.material?.name ?? '').toLowerCase();
+    const meshName = (child.name ?? '').toLowerCase();
+    const isTeeth = matName.includes('teeth') || matName.includes('tooth')
+                 || meshName.includes('teeth') || meshName.includes('tooth');
+    const isMouth = matName === 'mouth' || matName.includes('gum') || matName.includes('lip');
+
+    if (isMouth || (!isTeeth && matName !== '')) {
       child.material = child.material.clone();
       child.material.color.setHex(cfg.mouthColor);
       child.material.emissive.setHex(cfg.emissive);
@@ -168,6 +186,32 @@ new GLTFLoader().load('models/mouth/scene.gltf', gltf => {
       if (stage >= 2 && stage <= 4) {
         child.userData.pulseBase = cfg.emissiveInt;
         child.userData.pulseMat = child.material;
+      }
+    }
+
+    if (isTeeth) {
+      child.material = child.material.clone();
+      // Right side teeth (positive X in model space) get full darkening
+      // Left side stays relatively healthy — blend based on mesh X centre
+      const meshBox = new THREE.Box3().setFromObject(child);
+      const meshCenterX = (meshBox.min.x + meshBox.max.x) / 2;
+      const isRightSide = meshCenterX > 0;
+
+      if (isRightSide || stage >= 3) {
+        // Right side (or severe stage): apply full necrotic darkening
+        child.material.color.setHex(cfg.teethColor);
+        child.material.emissive.setHex(cfg.teethEmissive);
+        child.material.emissiveIntensity = cfg.teethEmissiveInt;
+        child.material.roughness = cfg.teethRoughness;
+        if (stage >= 2) {
+          child.userData.pulseBase = cfg.teethEmissiveInt;
+          child.userData.pulseMat = child.material;
+        }
+      } else {
+        // Left side at lower stages: mild yellowing only
+        const mildColor = stage === 0 ? 0xfff8f0 : 0xf0e0b0;
+        child.material.color.setHex(mildColor);
+        child.material.roughness = 0.35 + stage * 0.08;
       }
     }
   });
@@ -188,6 +232,8 @@ new GLTFLoader().load('models/mouth/scene.gltf', gltf => {
     t += 0.016;
     controls.update();
     if (lesionLight && stage >= 2) lesionLight.intensity = 2.5 + Math.sin(t * 2.2) * 1.0;
+    // Subtly pulse the right-teeth shadow at higher stages
+    if (teethDarkLight && stage >= 2) teethDarkLight.intensity = -(stage * 0.4 + Math.sin(t * 1.4) * 0.1);
     model.traverse(c => {
       if (c.userData.pulseMat)
         c.userData.pulseMat.emissiveIntensity = c.userData.pulseBase + Math.sin(t * 1.6) * 0.15;

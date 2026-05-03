@@ -9,8 +9,8 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'apple-touch-icon.png'],
       manifest: {
-        name: 'NomaAlert',
-        short_name: 'NomaAlert',
+        name: 'lumos.health',
+        short_name: 'lumos.health',
         description: 'AI-powered Noma screening for community health workers',
         theme_color: '#b91c1c',
         background_color: '#ffffff',

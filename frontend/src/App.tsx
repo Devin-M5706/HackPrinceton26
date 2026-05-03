@@ -14,7 +14,7 @@ function SetupScreen({ onSave }: { onSave: (token: string) => void }) {
     <div className="min-h-screen bg-red-700 flex flex-col items-center justify-center p-6 text-white">
       <div className="mb-8 text-center">
         <div className="text-7xl mb-4">🩺</div>
-        <h1 className="text-4xl font-bold mb-2">NomaAlert</h1>
+        <h1 className="text-4xl font-bold mb-2">lumos.health</h1>
         <p className="text-red-200 text-sm max-w-xs">
           AI-powered Noma screening for community health workers in Sub-Saharan Africa
         </p>
@@ -60,7 +60,7 @@ function SetupScreen({ onSave }: { onSave: (token: string) => void }) {
       </div>
 
       <p className="mt-10 text-red-400 text-xs text-center max-w-xs">
-        NomaAlert is a screening assistance tool. It is not a clinical diagnosis.
+        lumos.health is a screening assistance tool. It is not a clinical diagnosis.
         Always consult a trained health professional.
       </p>
     </div>
@@ -158,7 +158,7 @@ export default function App() {
         <div className="flex items-center gap-3 py-3">
           <span className="text-2xl">🩺</span>
           <div className="flex-1 min-w-0">
-            <h1 className="font-bold text-lg leading-tight">NomaAlert</h1>
+            <h1 className="font-bold text-lg leading-tight">lumos.health</h1>
             <p className="text-xs text-red-200 truncate">
               Token: <code className="font-mono">{token.slice(0, 12)}{token.length > 12 ? '…' : ''}</code>
             </p>

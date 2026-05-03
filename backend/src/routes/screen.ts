@@ -118,6 +118,9 @@ screenRouter.post('/', requireAuth, async (req: Request, res: Response) => {
   } else {
     try {
       // ── Step 1: Vision analysis ─────────────────────────────────────────────
+      console.log('\n┌─────────────────────────────────────────────┐');
+      console.log('│  VM 1 · Vision Analysis                     │');
+      console.log('└─────────────────────────────────────────────┘');
       const visionRaw = await getAi().chat.completions.create({
         model: AI_MODEL,
         messages: [{
@@ -131,6 +134,7 @@ screenRouter.post('/', requireAuth, async (req: Request, res: Response) => {
       });
       const visionContent = visionRaw.choices[0].message.content ?? '';
       visionResult = JSON.parse(visionContent.slice(visionContent.indexOf('{'), visionContent.lastIndexOf('}') + 1)) as VisionResult;
+      console.log(`  ✓ VM 1 complete — stage ${visionResult.stage}, score ${visionResult.risk_score}\n`);
     } catch (err) {
       console.error('[screen] Vision step failed:', err);
       visionResult = { ...MOCK_VISION, error: String(err) };
@@ -138,6 +142,9 @@ screenRouter.post('/', requireAuth, async (req: Request, res: Response) => {
 
     try {
       // ── Step 2: Clinical reasoning ──────────────────────────────────────────
+      console.log('\n┌─────────────────────────────────────────────┐');
+      console.log('│  VM 2 · Clinical Reasoning                  │');
+      console.log('└─────────────────────────────────────────────┘');
       const clinicalRaw = await getAi().chat.completions.create({
         model: AI_MODEL,
         messages: [
@@ -148,6 +155,7 @@ screenRouter.post('/', requireAuth, async (req: Request, res: Response) => {
       });
       const clinContent = clinicalRaw.choices[0].message.content ?? '';
       clinicalResult = JSON.parse(clinContent.slice(clinContent.indexOf('{'), clinContent.lastIndexOf('}') + 1)) as ClinicalResult;
+      console.log(`  ✓ VM 2 complete — triage: ${clinicalResult.triage}\n`);
     } catch (err) {
       console.error('[screen] Clinical step failed:', err);
       clinicalResult = { ...MOCK_CLINICAL, error: String(err) };
@@ -155,6 +163,9 @@ screenRouter.post('/', requireAuth, async (req: Request, res: Response) => {
 
     try {
       // ── Step 3: Referral — nearest clinic from Supabase + AI note ──────────
+      console.log('\n┌─────────────────────────────────────────────┐');
+      console.log('│  VM 3 · Referral & Clinic Lookup            │');
+      console.log('└─────────────────────────────────────────────┘');
       const { data: clinics } = await supabase().from('clinics').select('*').eq('noma_capable', true);
       const haversine = (a: number, b: number, c: number, d: number) => {
         const R = 6371, dLat = (c - a) * Math.PI / 180, dLng = (d - b) * Math.PI / 180;
@@ -180,6 +191,7 @@ screenRouter.post('/', requireAuth, async (req: Request, res: Response) => {
         contact: nearest?.contact ?? 'N/A',
         referral_note: noteObj.referral_note,
       };
+      console.log(`  ✓ VM 3 complete — clinic: ${referralResult.clinic_name} (${referralResult.distance_km} km)\n`);
     } catch (err) {
       console.error('[screen] Referral step failed:', err);
       referralResult = MOCK_REFERRAL;

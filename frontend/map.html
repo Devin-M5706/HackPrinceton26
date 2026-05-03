@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>NomaAlert — Case Map</title>
+<title>lumos.health — Case Map</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css"/>
 <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css"/>
@@ -68,7 +68,7 @@ html,body{width:100%;height:100%;background:#07090f;font-family:'Inter',system-u
   <a class="nav-brand" href="index.html">
     <div class="nav-logo"><svg viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg></div>
     <div>
-      <div class="nav-name">NomaAlert</div>
+      <div class="nav-name">lumos.health</div>
     </div>
   </a>
   <div class="nav-tag">Case surveillance map</div>
@@ -150,10 +150,12 @@ function formatDate(iso) {
   return new Date(iso).toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' });
 }
 
-const clusterGroup = L.markerClusterGroup({ maxClusterRadius: 40, showCoverageOnHover: false, chunkedLoading: true });
-map.addLayer(clusterGroup);
+const histGroup = L.markerClusterGroup({ maxClusterRadius: 40, showCoverageOnHover: false, chunkedLoading: true });
+map.addLayer(histGroup);
+const liveGroup = L.markerClusterGroup({ maxClusterRadius: 40, showCoverageOnHover: false, chunkedLoading: true });
+map.addLayer(liveGroup);
 
-// Scatter one dot per historical case
+// Scatter one dot per historical case (static, added once)
 HISTORICAL.forEach(h => {
   const popup = `
     <div class="popup-stage" style="color:${HIST_COLOR}">${h.label}</div>
@@ -165,18 +167,22 @@ HISTORICAL.forEach(h => {
   for (let i = 0; i < h.cases; i++) {
     const angle = Math.random() * 2 * Math.PI;
     const dist  = Math.sqrt(Math.random()) * h.r;
-    clusterGroup.addLayer(
+    histGroup.addLayer(
       L.marker([h.lat + dist * Math.sin(angle), h.lng + dist * Math.cos(angle)], { icon: dotIcon(HIST_COLOR) })
        .bindPopup(popup, { maxWidth: 240 })
     );
   }
 });
 
+let firstLoad = true;
+
 async function loadCases() {
   try {
     const res = await fetch(`${API_BASE}/api/cases/map`);
     const { data } = await res.json();
     document.getElementById('loading').style.display = 'none';
+
+    liveGroup.clearLayers();
 
     const chwSet = new Set();
     let urgent = 0, refer = 0;
@@ -205,11 +211,13 @@ async function loadCases() {
         <div class="popup-row">Date: <span>${formatDate(c.created_at)}</span></div>
         <div class="popup-chw">Reported by <strong>${chwName}</strong> · ${chwRegion}</div>
       `;
-      clusterGroup.addLayer(L.marker([c.lat, c.lng], { icon: pinIcon(color) }).bindPopup(popup, { maxWidth: 240 }));
+      liveGroup.addLayer(L.marker([c.lat, c.lng], { icon: pinIcon(color) }).bindPopup(popup, { maxWidth: 240 }));
     });
 
-    if (clusterGroup.getLayers().length > 0) {
-      map.fitBounds(clusterGroup.getBounds(), { padding: [60, 60], maxZoom: 8 });
+    if (firstLoad) {
+      firstLoad = false;
+      const all = L.featureGroup([histGroup, liveGroup]);
+      if (all.getLayers().length > 0) map.fitBounds(all.getBounds(), { padding: [60, 60], maxZoom: 8 });
     }
   } catch(err) {
     document.getElementById('loading').textContent = 'Could not load cases — is the backend running?';
@@ -217,6 +225,7 @@ async function loadCases() {
 }
 
 loadCases();
+setInterval(loadCases, 30000);
 </script>
 </body>
 </html>

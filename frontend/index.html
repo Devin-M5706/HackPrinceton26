@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>NomaAlert — AI Early Detection</title>
+<title>lumos.health — AI Early Detection</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
@@ -155,7 +155,7 @@ body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--t
       <svg viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
     </div>
     <div>
-      <div class="nav-name">NomaAlert</div>
+      <div class="nav-name">lumos.health</div>
       <div class="nav-sub">Early Detection</div>
     </div>
   </a>
@@ -185,7 +185,7 @@ body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--t
       It strikes children aged 2–6 in extreme poverty across sub-Saharan Africa —
       140,000 new cases every year, almost entirely undetected until it's too late.
       <br><br>
-      NomaAlert gives community health workers an AI triage tool:
+      lumos.health gives community health workers an AI triage tool:
       photograph the wound, get a WHO-staged diagnosis and clinic referral in seconds.
     </p>
     <div class="stats">
@@ -250,6 +250,60 @@ body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--t
 
 </div>
 
+<!-- MESSAGING SECTION -->
+<div style="padding:0 48px 48px;max-width:1200px;margin:0 auto">
+  <div style="font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.7px;margin-bottom:6px">No smartphone needed</div>
+  <div style="font-size:20px;font-weight:700;color:#fff;margin-bottom:6px">Submit via messaging</div>
+  <div style="font-size:13px;color:var(--muted);margin-bottom:20px">Send a photo to our AI assistant directly from your phone — no app download required.</div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;max-width:720px">
+
+    <!-- iMessage card -->
+    <div style="background:#0d1117;border:1px solid rgba(255,255,255,.1);border-radius:10px;overflow:hidden">
+      <div style="background:linear-gradient(135deg,#1a2a1a,#0d1a0d);padding:16px 18px;border-bottom:1px solid rgba(255,255,255,.07);display:flex;align-items:center;gap:10px">
+        <div style="width:32px;height:32px;border-radius:8px;background:#34c759;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        </div>
+        <div>
+          <div style="font-size:13px;font-weight:600;color:#fff">iMessage</div>
+          <div style="font-size:10px;color:#6b7280">iOS · Apple devices</div>
+        </div>
+        <div style="margin-left:auto;background:rgba(52,199,89,.15);border:1px solid rgba(52,199,89,.3);color:#34c759;font-size:10px;font-weight:500;padding:3px 8px;border-radius:12px">Coming soon</div>
+      </div>
+      <div style="padding:14px 18px">
+        <div style="font-size:12px;color:#6b7280;margin-bottom:10px;line-height:1.6">Send a photo of the patient's mouth to our iMessage bot. The AI replies with a WHO-staged diagnosis in seconds.</div>
+        <div style="background:#0a0d14;border:1px solid rgba(255,255,255,.06);border-radius:6px;padding:10px 12px;margin-bottom:12px">
+          <div style="font-size:10px;color:#4b5563;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">iMessage handle</div>
+          <div style="font-size:13px;font-weight:500;color:#9ca3af;font-family:monospace">+1 (XXX) XXX-XXXX</div>
+        </div>
+        <button disabled style="width:100%;background:rgba(52,199,89,.08);border:1px solid rgba(52,199,89,.2);color:#4b5563;font-size:12px;font-weight:500;padding:8px;border-radius:6px;cursor:not-allowed;font-family:inherit">Open iMessage →</button>
+      </div>
+    </div>
+
+    <!-- WhatsApp card -->
+    <div style="background:#0d1117;border:1px solid rgba(255,255,255,.1);border-radius:10px;overflow:hidden">
+      <div style="background:linear-gradient(135deg,#1a2a1a,#0d1a0d);padding:16px 18px;border-bottom:1px solid rgba(255,255,255,.07);display:flex;align-items:center;gap:10px">
+        <div style="width:32px;height:32px;border-radius:8px;background:#25d366;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="#fff"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+        </div>
+        <div>
+          <div style="font-size:13px;font-weight:600;color:#fff">WhatsApp</div>
+          <div style="font-size:10px;color:#6b7280">Android · Cross-platform</div>
+        </div>
+        <div style="margin-left:auto;background:rgba(37,211,102,.15);border:1px solid rgba(37,211,102,.3);color:#25d366;font-size:10px;font-weight:500;padding:3px 8px;border-radius:12px">Coming soon</div>
+      </div>
+      <div style="padding:14px 18px">
+        <div style="font-size:12px;color:#6b7280;margin-bottom:10px;line-height:1.6">Send a photo via WhatsApp to screen for Noma — works on any Android or feature phone with internet access.</div>
+        <div style="background:#0a0d14;border:1px solid rgba(255,255,255,.06);border-radius:6px;padding:10px 12px;margin-bottom:12px">
+          <div style="font-size:10px;color:#4b5563;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">WhatsApp number</div>
+          <div style="font-size:13px;font-weight:500;color:#9ca3af;font-family:monospace">+1 (XXX) XXX-XXXX</div>
+        </div>
+        <button disabled style="width:100%;background:rgba(37,211,102,.08);border:1px solid rgba(37,211,102,.2);color:#4b5563;font-size:12px;font-weight:500;padding:8px;border-radius:6px;cursor:not-allowed;font-family:inherit">Open WhatsApp →</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
 <!-- CASE MAP SECTION -->
 <div style="padding:48px;max-width:1200px;margin:0 auto">
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
@@ -274,7 +328,7 @@ body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--t
       <div class="modal-logo">
         <svg viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
       </div>
-      <div class="modal-title">Sign in to NomaAlert</div>
+      <div class="modal-title">Sign in to lumos.health</div>
       <div class="modal-sub">Free · Secure · No app required</div>
     </div>
     <div class="modal-body">
@@ -617,9 +671,13 @@ fetch(`${API_BASE}/api/alerts?days=7`)
 
   HISTORICAL.forEach(scatter);
 
-  fetch(`${API_BASE}/api/cases/map`)
-    .then(r => r.json())
-    .then(({ data }) => {
+  const liveLayer = L.markerClusterGroup({ maxClusterRadius:40, showCoverageOnHover:false, chunkedLoading:true });
+  map.addLayer(liveLayer);
+
+  async function loadLiveCases() {
+    try {
+      const { data } = await fetch(`${API_BASE}/api/cases/map`).then(r => r.json());
+      liveLayer.clearLayers();
       let urgent=0, refer=0; const chwSet=new Set();
       (data ?? []).forEach(c => {
         if (c.triage==='urgent') urgent++;
@@ -635,14 +693,16 @@ fetch(`${API_BASE}/api/alerts?days=7`)
           <div style="font-size:11px;color:#6b7280;margin-bottom:3px">Age: <span style="color:#94a3b8">${c.child_age_months?Math.round(c.child_age_months/12*10)/10+' yrs':'—'}</span></div>
           <div style="margin-top:8px;padding-top:8px;border-top:1px solid rgba(255,255,255,.07);font-size:11px;color:#4b5563">Reported by <strong style="color:#60a5fa">${chwName}</strong></div>
         </div>`;
-        clusters.addLayer(L.marker([c.lat,c.lng],{icon:pinIcon(color)}).bindPopup(popup,{maxWidth:220}));
+        liveLayer.addLayer(L.marker([c.lat,c.lng],{icon:pinIcon(color)}).bindPopup(popup,{maxWidth:220}));
       });
-      if (urgent||refer||chwSet.size) {
-        document.getElementById('ms-urgent').textContent = urgent;
-        document.getElementById('ms-refer').textContent = refer;
-        document.getElementById('ms-chws').textContent = chwSet.size;
-      }
-    }).catch(() => {});
+      document.getElementById('ms-urgent').textContent = urgent;
+      document.getElementById('ms-refer').textContent = refer;
+      document.getElementById('ms-chws').textContent = chwSet.size;
+    } catch(e) {}
+  }
+
+  loadLiveCases();
+  setInterval(loadLiveCases, 30000);
 })();
 </script>
 

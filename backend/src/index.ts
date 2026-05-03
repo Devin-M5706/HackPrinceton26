@@ -58,7 +58,7 @@ app.use(
 
 async function start() {
   app.listen(PORT, () => {
-    console.log(`[server] NomaAlert orchestrator listening on :${PORT}`);
+    console.log(`[server] lumos.health orchestrator listening on :${PORT}`);
     console.log(
       `[server] Mock mode: ${process.env.MOCK_MODE === "true" ? "ON" : "OFF"}`,
     );

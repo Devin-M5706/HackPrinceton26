@@ -1,0 +1,18 @@
+graph LR
+  VM["Surveillance VM"] --> POLL["Poll cases<br/>every 300 s"]
+  POLL --> DB[("Supabase<br/>cases")]
+  DB --> CLU["Single-link cluster<br/>within 10 km"]
+  CLU -->|"under 3 cases"| IDLE["No alert"]
+  CLU -->|"3 or more"| COOL{"Alerted here<br/>in last 24 h?"}
+  COOL -->|yes| IDLE
+  COOL -->|no| NOTIFY["POST /api/health/notify<br/>x-internal-secret"]
+  NOTIFY --> ROW[("Insert<br/>alerts row")]
+  NOTIFY --> WA["WhatsApp alert"]
+  IDLE --> POLL
+
+  classDef work fill:#dbeafe,stroke:#1e40af,color:#1e3a8a
+  classDef fire fill:#fef3c7,stroke:#b45309,color:#78350f
+  classDef store fill:#dcfce7,stroke:#15803d,color:#14532d
+  class POLL,CLU work
+  class NOTIFY,WA fire
+  class DB,ROW store

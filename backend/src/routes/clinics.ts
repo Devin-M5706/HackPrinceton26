@@ -1,49 +1,53 @@
 /**
- * GET /api/clinics   — facility lookup with optional proximity filter
+ * GET /api/clinics — facility directory with optional proximity filtering.
+ *
+ * Distance is computed in application code because the Supabase free tier has
+ * no PostGIS. The table is small (hundreds of rows), so a full scan plus an
+ * in-memory haversine is cheaper than the complexity of a bounding-box query.
  */
 
-import { Router, Request, Response } from 'express';
+import { Router, type Request, type Response } from 'express';
 import { requireAuth } from '../lib/auth';
-import { supabase, haversineKm } from '../lib/supabase';
+import { asyncHandler } from '../lib/errors';
+import { haversineKm, supabase, type Clinic } from '../lib/supabase';
+import { clinicsQuerySchema, parseOrThrow } from '../lib/validation';
 
 export const clinicsRouter = Router();
 
 clinicsRouter.use(requireAuth);
 
-// GET /api/clinics?lat=&lng=&radius_km=&noma_capable=true
-clinicsRouter.get('/', async (req: Request, res: Response) => {
-  const { lat, lng, radius_km, noma_capable } = req.query as Record<string, string>;
+interface ClinicWithDistance extends Clinic {
+  distance_km: number;
+}
 
-  let query = supabase().from('clinics').select('*');
+clinicsRouter.get(
+  '/',
+  asyncHandler(async (req: Request, res: Response) => {
+    const query = parseOrThrow(clinicsQuerySchema, req.query, 'query parameters');
 
-  if (noma_capable === 'true') {
-    query = query.eq('noma_capable', true);
-  }
+    let builder = supabase().from('clinics').select('*');
+    if (query.noma_capable) builder = builder.eq('noma_capable', true);
 
-  const { data, error } = await query;
+    const { data, error } = await builder;
+    if (error) throw new Error(`Clinic query failed: ${error.message}`);
 
-  if (error) {
-    res.status(500).json({ error: error.message });
-    return;
-  }
+    const clinics = data ?? [];
 
-  type ClinicRow = { id: string; name: string; region: string; lat: number; lng: number; noma_capable: boolean; contact: string };
-  let results = (data ?? []) as ClinicRow[];
+    // The schema guarantees these three arrive together or not at all.
+    if (query.lat === undefined || query.lng === undefined || query.radius_km === undefined) {
+      res.json({ data: clinics });
+      return;
+    }
 
-  // Post-filter by proximity if lat/lng/radius provided (Supabase free tier has no PostGIS)
-  if (lat && lng && radius_km) {
-    const userLat = parseFloat(lat);
-    const userLng = parseFloat(lng);
-    const radiusKm = parseFloat(radius_km);
-
-    const withDist = results
-      .map((c) => ({ ...c, distance_km: haversineKm(userLat, userLng, c.lat, c.lng) }))
-      .filter((c) => c.distance_km <= radiusKm)
+    const withDistance: ClinicWithDistance[] = clinics
+      .map((c) => ({
+        ...c,
+        distance_km:
+          Math.round(haversineKm(query.lat!, query.lng!, c.lat, c.lng) * 10) / 10,
+      }))
+      .filter((c) => c.distance_km <= query.radius_km!)
       .sort((a, b) => a.distance_km - b.distance_km);
 
-    res.json({ data: withDist });
-    return;
-  }
-
-  res.json({ data: results });
-});
+    res.json({ data: withDistance });
+  }),
+);

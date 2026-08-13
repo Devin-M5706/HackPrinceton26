@@ -1,43 +1,37 @@
-import { config } from 'dotenv';
-import { resolve } from 'path';
-config({ path: resolve(__dirname, '../.env') });
+/**
+ * Destroy every Dedalus machine on the account.
+ *
+ * Orphaned VMs bill by the hour, and a crashed process leaves them running.
+ * Run with `npm run cleanup:vms`.
+ *
+ * Destructive: this deletes ALL machines the API key can see, not just ones
+ * this project created. Requires --yes to proceed.
+ */
 
-const DCS_BASE = 'https://dcs.dedaluslabs.ai';
-const API_KEY = process.env.DEDALUS_API_KEY!;
+import '../src/config';
+import { destroyAllVms, listVms } from '../src/lib/dedalus';
 
-const STALE_IDS = [
-  'dm-019da301-b055-7a1a-b629-28d1d4834948',
-  'dm-019da301-b08a-7e9d-8930-9b4de394391d',
-  'dm-019da301-b070-7c23-96da-bc49e5e61567',
-  'dm-019da301-b06c-7ddd-814a-f1746cac2f66',
-  'dm-019da323-6c9f-7231-9901-f74115ba16b6',
-];
+async function main(): Promise<void> {
+  const ids = await listVms();
 
-async function main() {
-  for (const id of STALE_IDS) {
-    // GET the machine to retrieve its ETag
-    const getRes = await fetch(`${DCS_BASE}/v1/machines/${id}`, {
-      headers: { 'x-api-key': API_KEY },
-    });
-    if (!getRes.ok) {
-      console.log(`GET ${id} → ${getRes.status} (skipping)`);
-      continue;
-    }
-    const rawEtag = getRes.headers.get('etag') ?? getRes.headers.get('ETag') ?? '';
-    const etag = rawEtag.replace(/^W\//, '');
-    console.log(`GET ${id} → etag: ${etag}`);
-
-    const delRes = await fetch(`${DCS_BASE}/v1/machines/${id}`, {
-      method: 'DELETE',
-      headers: {
-        'x-api-key': API_KEY,
-        'Idempotency-Key': crypto.randomUUID(),
-        'If-Match': etag,
-      },
-    });
-    const body = await delRes.text();
-    console.log(`DELETE ${id} → ${delRes.status}: ${body}`);
+  if (ids.length === 0) {
+    console.log('No machines found.');
+    return;
   }
+
+  console.log(`Found ${ids.length} machine(s):`);
+  for (const id of ids) console.log(`  ${id}`);
+
+  if (!process.argv.includes('--yes')) {
+    console.log('\nRe-run with --yes to destroy all of them.');
+    return;
+  }
+
+  await destroyAllVms();
+  console.log('Done.');
 }
 
-main();
+main().catch((err: unknown) => {
+  console.error('Cleanup failed:', err instanceof Error ? err.message : err);
+  process.exitCode = 1;
+});

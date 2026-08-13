@@ -1,96 +1,157 @@
 /**
- * POST /api/auth/firebase
+ * POST /api/auth/firebase — exchange a Firebase phone-auth ID token for a
+ * CHW bearer token.
  *
- * Frontend completes Firebase Phone Auth (OTP send + verify) entirely client-side,
- * then sends the resulting Firebase ID token here.
- * We verify it with firebase-admin, extract the phone number, look up the CHW,
- * and return the existing bearer token used by all other routes.
+ * The browser completes the OTP flow with Firebase directly; we only verify
+ * the resulting ID token server-side, which is what proves control of the
+ * phone number. The bearer token we return is generated here and stored only
+ * as a SHA-256 digest, so it is shown to the caller exactly once.
  */
 
-import { Router, Request, Response } from 'express';
-import { App, cert, getApps, initializeApp } from 'firebase-admin/app';
+import { Router, type Request, type Response } from 'express';
+import { z } from 'zod';
+import { cert, getApp, getApps, initializeApp, type App } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
+import { config } from '../config';
+import { generateToken, hashToken } from '../lib/auth';
+import { asyncHandler, serviceUnavailable, unauthorized } from '../lib/errors';
+import { createLogger, describeError } from '../lib/logger';
 import { supabase } from '../lib/supabase';
+import { parseOrThrow } from '../lib/validation';
+
+const log = createLogger('auth');
 
 export const authRouter = Router();
 
-function getFirebaseApp(): App {
-  if (getApps().length > 0) return getApps()[0];
-  return initializeApp({
-    credential: cert({
-      projectId:   process.env.FIREBASE_PROJECT_ID,
-      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-      privateKey:  process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
-    }),
-  });
+const FIREBASE_APP_NAME = 'lumos-auth';
+
+function firebaseApp(): App {
+  const existing = getApps().find((a) => a.name === FIREBASE_APP_NAME);
+  if (existing) return getApp(FIREBASE_APP_NAME);
+
+  if (!config.firebaseConfigured) {
+    throw serviceUnavailable('Phone sign-in is not configured');
+  }
+
+  return initializeApp(
+    {
+      credential: cert({
+        projectId: config.FIREBASE_PROJECT_ID,
+        clientEmail: config.FIREBASE_CLIENT_EMAIL,
+        // Private keys are stored with literal \n in most secret managers.
+        privateKey: config.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
+      }),
+    },
+    FIREBASE_APP_NAME,
+  );
 }
 
-// ── POST /api/auth/firebase ───────────────────────────────────────────────────
+const firebaseAuthSchema = z.object({
+  idToken: z.string().min(1).max(8192),
+});
 
-authRouter.post('/firebase', async (req: Request, res: Response) => {
-  const { idToken } = req.body as { idToken?: string };
+/** E.164, as returned by Firebase phone auth. */
+const phoneSchema = z.string().regex(/^\+[1-9]\d{7,14}$/);
 
-  if (!idToken) {
-    res.status(400).json({ error: 'idToken is required' });
-    return;
-  }
+authRouter.post(
+  '/firebase',
+  asyncHandler(async (req: Request, res: Response) => {
+    const { idToken } = parseOrThrow(firebaseAuthSchema, req.body, 'request body');
 
-  // Verify the Firebase ID token
-  let phone: string;
-  try {
-    const app = getFirebaseApp();
-    const decoded = await getAuth(app).verifyIdToken(idToken);
-    if (!decoded.phone_number) {
-      res.status(401).json({ error: 'Token does not contain a phone number' });
+    // ── Mock mode ────────────────────────────────────────────────────────────
+    // No Firebase project is needed to demo the app, but the response is
+    // labelled so a caller cannot mistake it for a real session.
+    if (config.MOCK_MODE) {
+      res.json({
+        token: 'demo',
+        name: 'Demo CHW',
+        region: 'zinder',
+        language: 'english',
+        role: 'chw',
+        mock: true,
+      });
       return;
     }
-    phone = decoded.phone_number;
-  } catch (err) {
-    console.error('[auth] Firebase token verification failed:', err);
-    res.status(401).json({ error: 'Invalid or expired Firebase token' });
-    return;
-  }
 
-  // In mock mode skip Supabase and return a demo CHW
-  if (process.env.MOCK_MODE === 'true') {
-    res.json({ token: 'demo', name: 'Demo CHW', region: 'zinder', language: 'english' });
-    return;
-  }
+    // ── Verify the Firebase ID token ─────────────────────────────────────────
+    let phone: string;
+    try {
+      // checkRevoked rejects tokens for sessions an admin has since revoked.
+      const decoded = await getAuth(firebaseApp()).verifyIdToken(idToken, true);
+      if (!decoded.phone_number) {
+        throw unauthorized('Token does not contain a phone number');
+      }
+      phone = parseOrThrow(phoneSchema, decoded.phone_number, 'phone number');
+    } catch (err) {
+      if (err && typeof err === 'object' && 'status' in err) throw err;
+      log.warn('Firebase token verification failed', describeError(err));
+      throw unauthorized('Invalid or expired sign-in token');
+    }
 
-  // Look up CHW by phone
-  let { data: chw, error } = await supabase()
-    .from('chws')
-    .select('id, name, region, language, auth_token')
-    .eq('phone', phone)
-    .single();
+    const db = supabase();
 
-  // Auto-register on first login
-  if (!chw) {
-    const token = `chw_${Buffer.from(phone).toString('base64').replace(/[^a-zA-Z0-9]/g, '').slice(0, 24)}`;
-    const { data: newChw, error: insertError } = await supabase()
+    // ── Look up or create the CHW ────────────────────────────────────────────
+    const { data: existing, error: lookupError } = await db
+      .from('chws')
+      .select('id, name, region, language, role')
+      .eq('phone', phone)
+      .maybeSingle();
+
+    if (lookupError) {
+      throw new Error(`CHW lookup failed: ${lookupError.message}`);
+    }
+
+    // A fresh token is issued on every sign-in, which also means signing in
+    // again invalidates a token left on a lost handset.
+    const token = generateToken();
+    const tokenHash = hashToken(token);
+
+    if (existing) {
+      const { error } = await db
+        .from('chws')
+        .update({ auth_token_hash: tokenHash })
+        .eq('id', existing.id);
+
+      if (error) throw new Error(`Token rotation failed: ${error.message}`);
+
+      log.info('CHW signed in', { chw_id: existing.id });
+      res.json({
+        token,
+        name: existing.name,
+        region: existing.region,
+        language: existing.language,
+        role: existing.role,
+      });
+      return;
+    }
+
+    const { data: created, error: insertError } = await db
       .from('chws')
       .insert({
         phone,
-        name:       `CHW ${phone.slice(-4)}`,
-        region:     'unknown',
-        language:   'english',
-        auth_token: token,
+        // Last four digits only — enough to recognise your own account without
+        // printing a full phone number across every case list.
+        name: `CHW ${phone.slice(-4)}`,
+        region: 'unknown',
+        language: 'english',
+        role: 'chw',
+        auth_token_hash: tokenHash,
       })
-      .select('id, name, region, language, auth_token')
+      .select('id, name, region, language, role')
       .single();
 
-    if (insertError || !newChw) {
-      console.error('[auth] Auto-register failed:', insertError);
-      res.status(500).json({ error: 'Failed to create account' });
-      return;
+    if (insertError || !created) {
+      log.error('CHW auto-registration failed', { code: insertError?.code });
+      throw new Error('Failed to create account');
     }
-    chw = newChw;
-  }
 
-  res.json({
-    token:    chw.auth_token,
-    name:     chw.name,
-    region:   chw.region,
-    language: chw.language,
-  });
-});
+    log.info('CHW registered', { chw_id: created.id });
+    res.status(201).json({
+      token,
+      name: created.name,
+      region: created.region,
+      language: created.language,
+      role: created.role,
+    });
+  }),
+);

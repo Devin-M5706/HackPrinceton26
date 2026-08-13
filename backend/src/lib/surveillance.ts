@@ -1,18 +1,25 @@
 /**
- * Surveillance VM 4 manager.
+ * Surveillance agent lifecycle.
  *
- * Spins a single persistent Dedalus VM running surveillanceAgent.py in an
- * infinite loop.  The VM ID is kept in module state (survives for the lifetime
- * of the Node process, which is the whole point of using a persistent VM).
+ * Provisions one persistent Dedalus VM running `SURVEILLANCE_AGENT` in a loop:
+ * it polls the case table, clusters recent cases geographically, and posts an
+ * alert back to this server when a cluster crosses the threshold.
  *
- * On Vercel: call POST /api/health/surveillance/start once after deploy.
- * On a long-lived process (local / Dedalus VM): called automatically at startup.
+ * State lives in module memory, so it only survives as long as the process. On
+ * a long-lived host the agent is started at boot; on serverless, call
+ * POST /api/health/surveillance/start once after deploying.
  */
 
-import { createVm } from "./dedalus";
-import { SURVEILLANCE_AGENT } from "./agentScripts";
+import { config } from '../config';
+import { SURVEILLANCE_AGENT } from './agentScripts';
+import { createVm, destroyVm, startDetachedScript } from './dedalus';
+import { createLogger, describeError } from './logger';
 
-interface SurveillanceStatus {
+const log = createLogger('surveillance');
+
+const LOG_PATH = '/home/machine/surveillance.log';
+
+export interface SurveillanceStatus {
   running: boolean;
   machineId: string | null;
   startedAt: string | null;
@@ -26,66 +33,87 @@ const state: SurveillanceStatus = {
   error: null,
 };
 
+/** In-flight start, so concurrent callers share one attempt. */
+let starting: Promise<void> | null = null;
+
 export function getSurveillanceStatus(): SurveillanceStatus {
   return { ...state };
 }
 
+/**
+ * Provision the VM and launch the agent.
+ *
+ * Resolves once the agent has actually been launched, and marks `running` only
+ * then. The previous version set `running = true` optimistically before the
+ * launch request completed, so a failed start still reported healthy and the
+ * VM silently did nothing.
+ */
 export async function startSurveillance(): Promise<void> {
   if (state.running) return;
+  if (starting) return starting;
 
-  state.error = null;
-  console.log("[surveillance] Creating persistent VM 4…");
+  starting = (async () => {
+    state.error = null;
 
-  const machineId = await createVm();
-  state.machineId = machineId;
-  state.startedAt = new Date().toISOString();
+    if (!config.supabaseConfigured) {
+      throw new Error('Surveillance requires Supabase credentials');
+    }
+    if (!config.ORCHESTRATOR_URL || !config.ORCHESTRATOR_INTERNAL_SECRET) {
+      throw new Error(
+        'Surveillance requires ORCHESTRATOR_URL and ORCHESTRATOR_INTERNAL_SECRET ' +
+          'so the agent can post alerts back',
+      );
+    }
 
-  // Encode script and start it detached — we don't await this execution
-  // because it runs forever.  Dedalus will keep it alive on the VM.
-  const b64Script = Buffer.from(SURVEILLANCE_AGENT).toString("base64");
-  const envExports = buildEnvExports({
-    SUPABASE_URL: process.env.SUPABASE_URL!,
-    SUPABASE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    // WhatsApp Cloud API (Meta) — VM 4 fires these directly via HTTP
-    WHATSAPP_PHONE_NUMBER_ID: process.env.WHATSAPP_PHONE_NUMBER_ID ?? "",
-    WHATSAPP_ACCESS_TOKEN: process.env.WHATSAPP_ACCESS_TOKEN ?? "",
-    WHATSAPP_ALERT_TO_NUMBER: process.env.WHATSAPP_ALERT_TO_NUMBER ?? "",
-    // Orchestrator callback — VM 4 POSTs here to trigger iMessage via Photon Spectrum
-    ORCHESTRATOR_URL: process.env.ORCHESTRATOR_URL ?? "",
-    ORCHESTRATOR_INTERNAL_SECRET:
-      process.env.ORCHESTRATOR_INTERNAL_SECRET ?? "",
-  });
+    log.info('Provisioning surveillance VM');
+    const machineId = await createVm();
 
-  const command = `${envExports}; echo ${b64Script} | base64 -d > /tmp/surveillance.py && nohup python3 /tmp/surveillance.py >> /home/machine/surveillance.log 2>&1 &`;
+    try {
+      await startDetachedScript({
+        machineId,
+        script: SURVEILLANCE_AGENT,
+        logPath: LOG_PATH,
+        env: {
+          SUPABASE_URL: config.SUPABASE_URL!,
+          SUPABASE_KEY: config.SUPABASE_SERVICE_ROLE_KEY!,
+          ORCHESTRATOR_URL: config.ORCHESTRATOR_URL!,
+          ORCHESTRATOR_INTERNAL_SECRET: config.ORCHESTRATOR_INTERNAL_SECRET!,
+        },
+      });
+    } catch (err) {
+      // Do not leave a billable machine running with no agent on it.
+      await destroyVm(machineId);
+      throw err;
+    }
 
-  // Fire-and-forget — we don't wait for completion (it never completes)
-  const dcsBase = process.env.DEDALUS_DCS_URL ?? "https://dcs.dedaluslabs.ai";
-  fetch(`${dcsBase}/v1/machines/${machineId}/executions`, {
-    method: "POST",
-    headers: {
-      "x-api-key": process.env.DEDALUS_API_KEY!,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      command: ["/bin/bash", "-c", command],
-      timeout_ms: 10_000, // Just enough to launch nohup; process continues independently
-    }),
-  })
-    .then(() => {
-      state.running = true;
-      console.log(`[surveillance] VM 4 (${machineId}) started successfully`);
-    })
-    .catch((err: Error) => {
-      state.error = err.message;
-      console.error("[surveillance] Failed to start agent:", err.message);
-    });
+    state.machineId = machineId;
+    state.startedAt = new Date().toISOString();
+    state.running = true;
+    log.info('Surveillance agent started', { machineId });
+  })();
 
-  // Optimistically mark running — the nohup launch is near-instant
-  state.running = true;
+  try {
+    await starting;
+  } catch (err) {
+    state.error = err instanceof Error ? err.message : String(err);
+    state.running = false;
+    state.machineId = null;
+    state.startedAt = null;
+    log.error('Surveillance start failed', describeError(err));
+    throw err;
+  } finally {
+    starting = null;
+  }
 }
 
-function buildEnvExports(env: Record<string, string>): string {
-  return Object.entries(env)
-    .map(([k, v]) => `export ${k}='${v.replace(/'/g, "'\\''")}'`)
-    .join("; ");
+/** Tear the VM down. Called on graceful shutdown. */
+export async function stopSurveillance(): Promise<void> {
+  const machineId = state.machineId;
+  if (!machineId) return;
+
+  state.running = false;
+  state.machineId = null;
+  state.startedAt = null;
+
+  await destroyVm(machineId);
 }

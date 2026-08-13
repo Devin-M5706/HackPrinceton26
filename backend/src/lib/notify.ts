@@ -1,157 +1,107 @@
 /**
- * Outbreak notification dispatcher.
+ * Outbreak alert delivery.
  *
- * Channels:
- *   1. WhatsApp Business — Meta Cloud API (proactive, no user-initiation required)
- *   2. iMessage — Photon Spectrum (subscription-based: health authority texts the
- *      Photon bot number once to subscribe; alerts are then pushed automatically)
+ * One channel is implemented: WhatsApp via the Meta Cloud API, which allows
+ * proactive outbound messages to a health authority without them messaging
+ * first.
  *
- * Required env vars:
- *   WhatsApp:
- *     WHATSAPP_PHONE_NUMBER_ID   — sender phone number ID from Meta Business dashboard
- *     WHATSAPP_ACCESS_TOKEN      — permanent system-user access token
- *     WHATSAPP_ALERT_TO_NUMBER   — recipient phone number with country code (e.g. +12345678901)
- *
- *   iMessage (Photon Spectrum):
- *     PHOTON_PROJECT_ID          — project ID from app.photon.codes
- *     PHOTON_PROJECT_SECRET      — project secret from app.photon.codes
- *
- * iMessage subscription flow:
- *   1. Health authority texts any message to your Photon iMessage bot number.
- *   2. The listener below catches it, registers their space, and confirms subscription.
- *   3. All subsequent outbreak alerts are pushed into that space automatically.
- *   4. Spaces survive for the lifetime of the Node.js process (VM 4 stays alive indefinitely).
+ * An iMessage channel (Photon Spectrum) was scaffolded here previously but
+ * never worked — the subscriber registry was never populated, so every send
+ * was a no-op that still reported success to the caller. It has been removed
+ * rather than left as a channel that silently drops outbreak alerts.
  */
 
-// spectrum-ts (iMessage) disabled — incompatible with Node 24
-// import { Spectrum } from 'spectrum-ts';
-// import { imessage } from 'spectrum-ts/providers/imessage';
+import { config } from '../config';
+import { createLogger, describeError } from './logger';
+import type { AlertPayload } from './validation';
 
-// ── Types ─────────────────────────────────────────────────────────────────────
+const log = createLogger('notify');
 
-export interface AlertPayload {
-  region: string;
-  case_count: number;
-  radius_km: number;
-  center_lat: number;
-  center_lng: number;
+export type { AlertPayload };
+
+const WHATSAPP_API_VERSION = 'v21.0';
+const SEND_TIMEOUT_MS = 10_000;
+
+/** Human-readable alert text shared by every channel. */
+export function buildAlertMessage(payload: AlertPayload): string {
+  return (
+    `NOMA ALERT: ${payload.case_count} confirmed cases detected within ` +
+    `${payload.radius_km}km in ${payload.region}.\n` +
+    `Cluster centre: ${payload.center_lat.toFixed(4)}, ${payload.center_lng.toFixed(4)}.\n` +
+    `Immediate public health response required. — lumos.health surveillance`
+  );
 }
-
-// ── iMessage subscriber registry ──────────────────────────────────────────────
-
-type SpectrumSpace = { send: (msg: string) => Promise<void> };
-const _subscribers = new Map<string, SpectrumSpace>();
-let _spectrumStarted = false;
-
-export async function startPhotonListener(): Promise<void> {
-  if (_spectrumStarted) return;
-  _spectrumStarted = true;
-  console.log('[notify] iMessage (Photon Spectrum) disabled — not compatible with Node 24');
-}
-
-export function iMessageSubscriberCount(): number {
-  return _subscribers.size;
-}
-
-// ── WhatsApp Cloud API (Meta) ─────────────────────────────────────────────────
 
 /**
- * Send an outbreak alert via the Meta WhatsApp Cloud API.
+ * Send an outbreak alert over the WhatsApp Cloud API.
  *
- * This is a proactive (outbound) send — no prior user message needed.
- * Uses a plain text message; upgrade to a pre-approved template if Meta
- * enforces template-only sending on your number tier.
+ * Throws on failure so `dispatchAlertNotifications` can record it. A dropped
+ * outbreak alert is an incident, not a warning.
  */
 export async function sendWhatsAppAlert(payload: AlertPayload): Promise<void> {
-  const phoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID;
-  const accessToken = process.env.WHATSAPP_ACCESS_TOKEN;
-  const toNumber = process.env.WHATSAPP_ALERT_TO_NUMBER;
-
-  if (!phoneNumberId || !accessToken || !toNumber) {
-    console.warn('[notify] WhatsApp not configured (missing env vars) — skipping');
+  if (!config.whatsappConfigured) {
+    log.warn('WhatsApp is not configured — alert not delivered', {
+      region: payload.region,
+      case_count: payload.case_count,
+    });
     return;
   }
 
-  const res = await fetch(
-    `https://graph.facebook.com/v21.0/${phoneNumberId}/messages`,
+  const response = await fetch(
+    `https://graph.facebook.com/${WHATSAPP_API_VERSION}/${config.WHATSAPP_PHONE_NUMBER_ID}/messages`,
     {
       method: 'POST',
       headers: {
-        Authorization: `Bearer ${accessToken}`,
+        Authorization: `Bearer ${config.WHATSAPP_ACCESS_TOKEN}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
         messaging_product: 'whatsapp',
-        to: toNumber,
+        to: config.WHATSAPP_ALERT_TO_NUMBER,
         type: 'text',
-        text: {
-          body: buildAlertMessage(payload),
-          preview_url: false,
-        },
+        text: { body: buildAlertMessage(payload), preview_url: false },
       }),
+      signal: AbortSignal.timeout(SEND_TIMEOUT_MS),
     },
   );
 
-  if (!res.ok) {
-    const body = await res.text();
-    throw new Error(`WhatsApp Cloud API ${res.status}: ${body}`);
+  if (!response.ok) {
+    // The body can echo the access token back in an error envelope, so only
+    // the status is recorded.
+    throw new Error(`WhatsApp Cloud API returned ${response.status}`);
   }
 
-  console.log('[notify] WhatsApp alert sent successfully');
+  log.info('WhatsApp alert delivered', {
+    region: payload.region,
+    case_count: payload.case_count,
+  });
 }
 
-// ── iMessage via Photon Spectrum ──────────────────────────────────────────────
-
 /**
- * Push an outbreak alert to all registered iMessage subscribers.
- * No-op (with a warning) if no subscribers are registered yet.
+ * Fire an alert on every configured channel.
+ * One channel failing never prevents the others from being attempted.
  */
-export async function sendIMessageAlert(payload: AlertPayload): Promise<void> {
-  if (_subscribers.size === 0) {
-    console.warn('[notify] No iMessage subscribers registered — skipping iMessage alert');
-    return;
-  }
+export async function dispatchAlertNotifications(payload: AlertPayload): Promise<void> {
+  const channels: Array<{ name: string; send: Promise<void> }> = [
+    { name: 'whatsapp', send: sendWhatsAppAlert(payload) },
+  ];
 
-  const msg = buildAlertMessage(payload);
+  const results = await Promise.allSettled(channels.map((c) => c.send));
 
-  const sends = Array.from(_subscribers.entries()).map(async ([key, space]) => {
-    try {
-      await space.send(msg);
-    } catch (err) {
-      console.error(`[notify] iMessage send failed for ${key}:`, (err as Error).message);
+  let delivered = 0;
+  results.forEach((result, i) => {
+    const name = channels[i]?.name ?? 'unknown';
+    if (result.status === 'rejected') {
+      log.error(`Channel "${name}" failed`, describeError(result.reason));
+    } else {
+      delivered += 1;
     }
   });
 
-  await Promise.all(sends);
-  console.log(`[notify] iMessage alert pushed to ${_subscribers.size} subscriber(s)`);
-}
-
-// ── Dispatch all configured channels ─────────────────────────────────────────
-
-/**
- * Fire outbreak alerts on every configured notification channel.
- * Failures on one channel never block the other.
- */
-export async function dispatchAlertNotifications(payload: AlertPayload): Promise<void> {
-  const results = await Promise.allSettled([
-    sendWhatsAppAlert(payload),
-    sendIMessageAlert(payload),
-  ]);
-
-  for (const result of results) {
-    if (result.status === 'rejected') {
-      console.error('[notify] Notification channel error:', (result.reason as Error).message);
-    }
+  if (delivered === 0) {
+    log.error('Outbreak alert was not delivered on any channel', {
+      region: payload.region,
+      case_count: payload.case_count,
+    });
   }
-}
-
-// ── Shared helpers ────────────────────────────────────────────────────────────
-
-export function buildAlertMessage(payload: AlertPayload): string {
-  return (
-    `🚨 NOMA ALERT: ${payload.case_count} confirmed cases detected within ` +
-    `${payload.radius_km}km in ${payload.region}.\n` +
-    `Cluster center: ${payload.center_lat.toFixed(4)}°N, ${payload.center_lng.toFixed(4)}°E.\n` +
-    `Immediate public health response required. — NomaAlert surveillance system`
-  );
 }

@@ -1,372 +1,289 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>lumos.health — AI Early Detection</title>
-<link rel="preconnect" href="https://fonts.googleapis.com"/>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css"/>
-<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css"/>
-<style>
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-:root{
-  --bg:#07090f;
-  --bg2:#0d1117;
-  --bg3:#161b26;
-  --border:rgba(255,255,255,.07);
-  --border2:rgba(255,255,255,.12);
-  --text:#e6eaf2;
-  --muted:#6b7280;
-  --red:#e84040;
-  --red2:#ff6b6b;
-  --blue:#3b82f6;
-  --blue2:#60a5fa;
-  --green:#22c55e;
-  --amber:#f59e0b;
-}
-html{scroll-behavior:smooth}
-body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--text);line-height:1.6;min-height:100vh}
-
-/* ── NAV ─────────────────────────────────────────────────────────────────── */
-.nav{position:fixed;top:0;left:0;right:0;z-index:100;height:56px;background:rgba(7,9,15,.85);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 32px;gap:16px}
-.nav-brand{display:flex;align-items:center;gap:10px;text-decoration:none;margin-right:auto}
-.nav-logo{width:30px;height:30px;background:var(--red);border-radius:6px;display:flex;align-items:center;justify-content:center}
-.nav-logo svg{width:16px;height:16px;stroke:#fff;fill:none;stroke-width:2.5;stroke-linecap:round}
-.nav-name{font-size:14px;font-weight:600;color:#fff;letter-spacing:.3px}
-.nav-sub{font-size:10px;color:var(--muted);letter-spacing:.5px;text-transform:uppercase}
-.alert-pill{display:flex;align-items:center;gap:6px;background:rgba(232,64,64,.15);border:1px solid rgba(232,64,64,.3);color:var(--red2);font-size:11px;font-weight:500;padding:4px 12px;border-radius:20px;cursor:default}
-.pulse{width:6px;height:6px;border-radius:50%;background:var(--red2);animation:pulse 1.5s infinite}
-@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.3;transform:scale(.6)}}
-.nav-login{background:transparent;border:1px solid var(--border2);color:var(--text);font-size:12px;font-weight:500;padding:6px 16px;border-radius:5px;cursor:pointer;transition:all .15s;font-family:inherit}
-.nav-login:hover{border-color:#3b82f6;color:#60a5fa}
-
-/* ── LAYOUT ──────────────────────────────────────────────────────────────── */
-.page{min-height:100vh;padding-top:56px;display:grid;grid-template-columns:1fr 440px;gap:0;max-width:1200px;margin:0 auto;padding-left:48px;padding-right:48px}
-@media(max-width:900px){.page{grid-template-columns:1fr;padding-left:20px;padding-right:20px}}
-
-/* ── HERO ────────────────────────────────────────────────────────────────── */
-.hero{padding:72px 48px 72px 0;display:flex;flex-direction:column;justify-content:center}
-.hero-tag{display:inline-flex;align-items:center;gap:7px;font-size:10px;font-weight:600;letter-spacing:1.2px;text-transform:uppercase;color:var(--muted);margin-bottom:28px}
-.hero-tag span{width:18px;height:1px;background:var(--muted)}
-.hero-title{font-size:clamp(28px,3.5vw,44px);font-weight:700;line-height:1.15;color:#fff;margin-bottom:20px;letter-spacing:-.5px}
-.hero-title em{color:var(--red2);font-style:normal}
-.hero-body{font-size:15px;color:var(--muted);line-height:1.8;max-width:480px;margin-bottom:40px}
-.hero-body strong{color:var(--text)}
-.stats{display:flex;gap:32px;flex-wrap:wrap}
-.stat{display:flex;flex-direction:column}
-.stat-num{font-size:26px;font-weight:700;color:#fff;letter-spacing:-.5px;line-height:1}
-.stat-num.red{color:var(--red2)}
-.stat-num.green{color:var(--green)}
-.stat-lbl{font-size:11px;color:var(--muted);margin-top:4px;line-height:1.4}
-.stat-divider{width:1px;background:var(--border);align-self:stretch;margin:4px 0}
-
-/* ── SCREENING PANEL ─────────────────────────────────────────────────────── */
-.panel-wrap{padding:72px 0 72px 48px;display:flex;align-items:center}
-@media(max-width:900px){.panel-wrap{padding:0 0 48px}}
-.panel{background:var(--bg2);border:1px solid var(--border2);border-radius:12px;overflow:hidden;width:100%}
-.panel-head{background:var(--bg3);padding:16px 20px;border-bottom:1px solid var(--border)}
-.panel-title{font-size:13px;font-weight:600;color:#fff}
-.panel-sub{font-size:11px;color:var(--muted);margin-top:2px}
-.panel-body{padding:20px}
-.frow{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
-.fld{display:flex;flex-direction:column;gap:5px}
-.fld label{font-size:11px;font-weight:500;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
-.fld input,.fld select,.fld textarea{background:var(--bg);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-size:13px;padding:8px 10px;font-family:inherit;transition:border-color .15s;outline:none}
-.fld input:focus,.fld select:focus,.fld textarea:focus{border-color:var(--blue)}
-.fld select option{background:var(--bg)}
-.fld textarea{resize:vertical;min-height:60px}
-.fld{margin-bottom:10px}
-.upload-zone{border:1.5px dashed var(--border2);border-radius:8px;padding:24px;text-align:center;cursor:pointer;transition:border-color .15s;margin-top:4px}
-.upload-zone:hover{border-color:var(--blue2)}
-.uz-icon{margin-bottom:8px}
-.uz-icon svg{stroke:var(--blue2)}
-.uz-title{font-size:13px;font-weight:500;color:var(--text)}
-.uz-sub{font-size:11px;color:var(--muted);margin-top:3px}
-.uz-btn{margin-top:10px;background:var(--bg3);border:1px solid var(--border2);color:var(--text);font-size:12px;font-weight:500;padding:6px 16px;border-radius:5px;cursor:pointer;font-family:inherit}
-.preview-wrap{display:none;margin-top:12px}
-.preview-img{width:100%;border-radius:6px;max-height:220px;object-fit:cover;border:1px solid var(--border)}
-.analyze-btn{width:100%;margin-top:10px;background:var(--blue);color:#fff;font-size:13px;font-weight:600;padding:10px;border-radius:6px;border:none;cursor:pointer;font-family:inherit;transition:background .15s}
-.analyze-btn:hover:not(:disabled){background:#2563eb}
-.analyze-btn:disabled{opacity:.5;cursor:not-allowed}
-.result-wrap{display:none;margin-top:12px;background:var(--bg);border:1px solid var(--border2);border-radius:8px;padding:14px}
-.result-stage{font-size:15px;font-weight:700;margin-bottom:6px}
-.result-text{font-size:12px;color:var(--muted);line-height:1.7;margin-bottom:8px}
-.result-clinic{font-size:11px;color:var(--red2);margin-bottom:8px}
-.sms-btn{background:transparent;border:1px solid var(--border2);color:var(--text);font-size:12px;font-weight:500;padding:7px 14px;border-radius:5px;cursor:pointer;font-family:inherit;width:100%;transition:all .15s}
-.sms-btn:hover{border-color:var(--blue2);color:var(--blue2)}
-#mouth3d-wrap{display:none;width:100%;height:380px;border-radius:8px;overflow:hidden;margin-bottom:10px;background:#050810;border:1px solid var(--border);position:relative}
-#mouth3d-canvas{width:100%!important;height:100%!important;display:block}
-.mouth3d-label{position:absolute;bottom:8px;left:10px;font-size:10px;color:var(--muted);pointer-events:none;letter-spacing:.5px;text-transform:uppercase}
-
-/* ── LOGIN MODAL ─────────────────────────────────────────────────────────── */
-.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);backdrop-filter:blur(4px);z-index:200;align-items:center;justify-content:center}
-.modal-overlay.open{display:flex}
-.modal{background:var(--bg2);border:1px solid var(--border2);border-radius:12px;width:100%;max-width:380px;overflow:hidden}
-.modal-head{background:var(--bg3);padding:20px 24px 16px;border-bottom:1px solid var(--border);position:relative}
-.modal-close{position:absolute;top:16px;right:16px;background:none;border:none;color:var(--muted);font-size:16px;cursor:pointer;line-height:1;padding:4px}
-.modal-close:hover{color:var(--text)}
-.modal-logo{width:36px;height:36px;background:var(--red);border-radius:8px;display:flex;align-items:center;justify-content:center;margin-bottom:12px}
-.modal-logo svg{width:18px;height:18px;stroke:#fff;fill:none;stroke-width:2.5;stroke-linecap:round}
-.modal-title{font-size:16px;font-weight:700;color:#fff}
-.modal-sub{font-size:12px;color:var(--muted);margin-top:3px}
-.modal-body{padding:20px 24px 24px}
-.login-step{display:none}
-.login-step.active{display:block}
-.login-instruction{font-size:14px;font-weight:600;color:#fff;margin-bottom:6px}
-.login-hint{font-size:12px;color:var(--muted);margin-bottom:16px}
-.role-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
-.role-btn{background:var(--bg);border:1.5px solid var(--border2);border-radius:8px;padding:16px 12px;text-align:center;cursor:pointer;transition:all .15s}
-.role-btn:hover{border-color:var(--blue2)}
-.role-btn.selected{border-color:var(--blue);background:rgba(59,130,246,.1)}
-.role-icon{font-size:22px;margin-bottom:6px}
-.role-label{font-size:12px;font-weight:600;color:var(--text)}
-.role-desc{font-size:10px;color:var(--muted);margin-top:2px}
-.modal-btn{width:100%;background:var(--blue);color:#fff;border:none;border-radius:6px;padding:11px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;transition:background .15s}
-.modal-btn:hover:not(:disabled){background:#2563eb}
-.modal-btn:disabled{opacity:.4;cursor:not-allowed}
-.modal-back{background:none;border:none;color:var(--muted);font-size:12px;cursor:pointer;margin-top:12px;font-family:inherit;padding:4px}
-.modal-back:hover{color:var(--text)}
-.big-input{width:100%;background:var(--bg);border:1.5px solid var(--border2);border-radius:8px;color:var(--text);font-size:18px;padding:12px 14px;font-family:inherit;outline:none;margin-bottom:4px;transition:border-color .15s}
-.big-input:focus{border-color:var(--blue)}
-.login-error{font-size:11px;color:var(--red2);margin-bottom:12px;display:none}
-.pin-display{display:flex;gap:8px;justify-content:center;margin:0 0 20px}
-.pin-dot{width:16px;height:16px;border-radius:50%;border:2px solid var(--border2);transition:all .15s}
-.pin-dot.filled{background:var(--blue);border-color:var(--blue)}
-.pin-pad{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:4px}
-.pin-key{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:14px;text-align:center;font-size:16px;font-weight:500;cursor:pointer;transition:all .15s;user-select:none}
-.pin-key:hover{background:var(--bg);border-color:var(--border2)}
-.pin-key:active{transform:scale(.95)}
-.pin-key.zero{grid-column:2}
-.pin-key.del{grid-column:3;font-size:14px;color:var(--muted)}
-.success-icon{width:48px;height:48px;background:rgba(34,197,94,.15);border:1px solid rgba(34,197,94,.3);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 16px}
-.success-icon svg{width:22px;height:22px}
-.success-title{font-size:16px;font-weight:700;color:#fff;text-align:center;margin-bottom:8px}
-.success-body{font-size:12px;color:var(--muted);text-align:center;line-height:1.7;margin-bottom:20px}
-</style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="description" content="AI-assisted Noma screening and outbreak surveillance for community health workers in sub-Saharan Africa." />
+<title>lumos.health — AI Early Detection for Noma</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
 </head>
 <body>
 
-<!-- NAV -->
 <nav class="nav">
-  <a class="nav-brand" href="#">
+  <a class="nav-brand" href="/">
     <div class="nav-logo">
-      <svg viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M22 12h-4l-3 9L9 3l-3 9H2" /></svg>
     </div>
     <div>
       <div class="nav-name">lumos.health</div>
       <div class="nav-sub">Early Detection</div>
     </div>
   </a>
-  <div class="alert-pill" id="alert-badge">
-    <div class="pulse"></div>
-    <span id="alert-count">…</span> active alerts
+
+  <div class="alert-pill">
+    <div class="pulse" aria-hidden="true"></div>
+    <span id="alert-count">…</span>&nbsp;active alerts
   </div>
-  <a href="map.html" style="display:flex;align-items:center;gap:6px;background:transparent;border:1px solid rgba(255,255,255,.1);color:#94a3b8;font-size:12px;font-weight:500;padding:6px 14px;border-radius:5px;text-decoration:none;transition:all .15s" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='#94a3b8'">
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/><line x1="9" y1="3" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="21"/></svg>
+
+  <a href="map.html" class="nav-link">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21" /><line x1="9" y1="3" x2="9" y2="18" /><line x1="15" y1="6" x2="15" y2="21" />
+    </svg>
     Case map
   </a>
-  <button class="nav-login" onclick="openLogin()">Sign in</button>
+
+  <button type="button" class="nav-link" id="nav-login-btn">Sign in</button>
+  <button type="button" class="nav-link" id="nav-signout-btn" hidden>Sign out</button>
 </nav>
 
-<!-- MAIN CONTENT -->
-<div class="page">
+<main>
+  <div class="page">
 
-  <!-- HERO -->
-  <div class="hero">
-    <div class="hero-tag"><span></span>AI-powered disease surveillance<span></span></div>
-    <h1 class="hero-title">
-      Noma kills <em>90%</em> of the<br>children it touches.<br>
-      Caught early, it costs <em>$1</em> to cure.
-    </h1>
-    <p class="hero-body">
-      Noma is a gangrenous infection that destroys a child's face within <strong>72 hours</strong>.
-      It strikes children aged 2–6 in extreme poverty across sub-Saharan Africa —
-      140,000 new cases every year, almost entirely undetected until it's too late.
-      <br><br>
-      lumos.health gives community health workers an AI triage tool:
-      photograph the wound, get a WHO-staged diagnosis and clinic referral in seconds.
-    </p>
-    <div class="stats">
-      <div class="stat">
-        <div class="stat-num red">90%</div>
-        <div class="stat-lbl">Fatal without<br>treatment</div>
-      </div>
-      <div class="stat-divider"></div>
-      <div class="stat">
-        <div class="stat-num green">$1</div>
-        <div class="stat-lbl">Antibiotic cost<br>at Stage 1</div>
-      </div>
-      <div class="stat-divider"></div>
-      <div class="stat">
-        <div class="stat-num">72h</div>
-        <div class="stat-lbl">From ulcer to<br>life-threatening</div>
-      </div>
-      <div class="stat-divider"></div>
-      <div class="stat">
-        <div class="stat-num">140k</div>
-        <div class="stat-lbl">New cases<br>per year</div>
-      </div>
-    </div>
-  </div>
+    <!-- Hero -->
+    <section class="hero">
+      <div class="hero-tag"><span></span>AI-powered disease surveillance<span></span></div>
+      <h1 class="hero-title">
+        Noma kills <em>90%</em> of the<br />children it touches.<br />
+        Caught early, it costs <em>$1</em> to cure.
+      </h1>
+      <p class="hero-body">
+        Noma is a gangrenous infection that can destroy a child's face within
+        <strong>days</strong>. It strikes children aged 2–6 living in extreme poverty,
+        most of them in sub-Saharan Africa, and the great majority of cases are never
+        detected in time.
+        <br /><br />
+        lumos.health gives community health workers an AI triage tool: photograph the
+        wound, get a WHO-staged assessment and a clinic referral in seconds.
+      </p>
 
-  <!-- SCREENING PANEL -->
-  <div class="panel-wrap">
-    <div class="panel" id="screen">
-      <div class="panel-head">
-        <div class="panel-title">Submit patient for AI screening</div>
-        <div class="panel-sub">Community health workers · Secure · Free</div>
-      </div>
-      <div class="panel-body">
-        <div class="frow">
-          <div class="fld"><label>Age (years)</label><input id="field-age" type="number" placeholder="e.g. 4" min="0" max="18"/></div>
-          <div class="fld"><label>Sex</label><select id="field-sex"><option value="male">Male</option><option value="female">Female</option></select></div>
+      <div class="stats">
+        <div class="stat">
+          <div class="stat-num red">90%</div>
+          <div class="stat-lbl">Fatal without<br />treatment</div>
         </div>
-        <div class="fld"><label>Village / Region</label><input id="field-region" type="text" placeholder="e.g. Zinder Region, Niger"/></div>
-        <div class="fld"><label>Clinical notes (optional)</label><textarea id="field-notes" placeholder="Swelling, discolouration, lesions…"></textarea></div>
-        <div class="upload-zone" onclick="document.getElementById('main-img').click()">
-          <div class="uz-icon">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#60a5fa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+        <div class="stat-divider"></div>
+        <div class="stat">
+          <div class="stat-num green">$1</div>
+          <div class="stat-lbl">Antibiotic cost<br />at Stage 1</div>
+        </div>
+        <div class="stat-divider"></div>
+        <div class="stat">
+          <div class="stat-num">72h</div>
+          <div class="stat-lbl">From ulcer to<br />life-threatening</div>
+        </div>
+        <div class="stat-divider"></div>
+        <div class="stat">
+          <div class="stat-num">140k</div>
+          <div class="stat-lbl">Estimated new<br />cases per year</div>
+        </div>
+      </div>
+
+      <p class="hero-sources">
+        Figures are widely cited WHO and published estimates for noma. Incidence is
+        poorly measured and estimates vary considerably between sources.
+      </p>
+    </section>
+
+    <!-- Screening panel -->
+    <div class="panel-wrap">
+      <section class="panel" id="screen" aria-labelledby="screen-heading">
+        <div class="panel-head">
+          <h2 class="panel-title" id="screen-heading">Submit a patient for AI screening</h2>
+          <div class="panel-sub">Community health workers · Secure · Free</div>
+        </div>
+
+        <div class="panel-body">
+          <div class="frow">
+            <div class="fld">
+              <label for="field-age">Age (years)</label>
+              <input id="field-age" type="number" placeholder="e.g. 4" min="0" max="18" step="0.5" />
+            </div>
+            <div class="fld">
+              <label for="field-sex">Sex</label>
+              <select id="field-sex">
+                <option value="male">Male</option>
+                <option value="female">Female</option>
+                <option value="unknown">Not recorded</option>
+              </select>
+            </div>
           </div>
-          <div class="uz-title">Upload patient photograph</div>
-          <div class="uz-sub">JPG, PNG, WebP — max 10 MB</div>
-          <button class="uz-btn" type="button">Choose image</button>
-          <input type="file" id="main-img" accept="image/*" onchange="handleUpload(event)" style="display:none"/>
-        </div>
-        <div class="preview-wrap" id="preview-wrap">
-          <img class="preview-img" id="preview-img" alt="Patient image preview"/>
-          <button class="analyze-btn" onclick="runAnalysis()">Analyse with AI pipeline →</button>
-        </div>
-        <div class="result-wrap" id="result-wrap">
-          <div class="result-stage" id="result-stage">—</div>
-          <div class="result-text" id="result-text">—</div>
-          <div id="result-clinic" class="result-clinic" style="display:none"></div>
-          <button class="sms-btn" id="sms-btn" onclick="copyReferral()">Copy referral note →</button>
-        </div>
-      </div>
-    </div>
-  </div>
 
-</div>
+          <div class="fld">
+            <label for="field-region">Village / Region</label>
+            <input id="field-region" type="text" placeholder="e.g. Zinder Region, Niger" />
+          </div>
 
-<!-- MESSAGING SECTION -->
-<div style="padding:0 48px 48px;max-width:1200px;margin:0 auto">
-  <div style="font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.7px;margin-bottom:6px">No smartphone needed</div>
-  <div style="font-size:20px;font-weight:700;color:#fff;margin-bottom:6px">Submit via messaging</div>
-  <div style="font-size:13px;color:var(--muted);margin-bottom:20px">Send a photo to our AI assistant directly from your phone — no app download required.</div>
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;max-width:720px">
+          <div class="fld">
+            <label for="field-notes">Clinical notes (optional)</label>
+            <textarea id="field-notes" placeholder="Swelling, discolouration, lesions…"></textarea>
+          </div>
 
-    <!-- iMessage card -->
-    <div style="background:#0d1117;border:1px solid rgba(255,255,255,.1);border-radius:10px;overflow:hidden">
-      <div style="background:linear-gradient(135deg,#1a2a1a,#0d1a0d);padding:16px 18px;border-bottom:1px solid rgba(255,255,255,.07);display:flex;align-items:center;gap:10px">
-        <div style="width:32px;height:32px;border-radius:8px;background:#34c759;display:flex;align-items:center;justify-content:center;flex-shrink:0">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-        </div>
-        <div>
-          <div style="font-size:13px;font-weight:600;color:#fff">iMessage</div>
-          <div style="font-size:10px;color:#6b7280">iOS · Apple devices</div>
-        </div>
-        <div style="margin-left:auto;background:rgba(52,199,89,.15);border:1px solid rgba(52,199,89,.3);color:#34c759;font-size:10px;font-weight:500;padding:3px 8px;border-radius:12px">Coming soon</div>
-      </div>
-      <div style="padding:14px 18px">
-        <div style="font-size:12px;color:#6b7280;margin-bottom:10px;line-height:1.6">Send a photo of the patient's mouth to our iMessage bot. The AI replies with a WHO-staged diagnosis in seconds.</div>
-        <div style="background:#0a0d14;border:1px solid rgba(255,255,255,.06);border-radius:6px;padding:10px 12px;margin-bottom:12px">
-          <div style="font-size:10px;color:#4b5563;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">iMessage handle</div>
-          <div style="font-size:13px;font-weight:500;color:#9ca3af;font-family:monospace">+1 (XXX) XXX-XXXX</div>
-        </div>
-        <button disabled style="width:100%;background:rgba(52,199,89,.08);border:1px solid rgba(52,199,89,.2);color:#4b5563;font-size:12px;font-weight:500;padding:8px;border-radius:6px;cursor:not-allowed;font-family:inherit">Open iMessage →</button>
-      </div>
-    </div>
+          <div class="upload-zone" id="upload-zone">
+            <div class="uz-icon">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#60a5fa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="8.5" cy="8.5" r="1.5" /><polyline points="21 15 16 10 5 21" />
+              </svg>
+            </div>
+            <div class="uz-title">Upload patient photograph</div>
+            <div class="uz-sub">JPEG, PNG or WebP — max 8 MB</div>
+            <button class="uz-btn" type="button" id="choose-image-btn">Choose image</button>
+            <input type="file" id="main-img" accept="image/jpeg,image/png,image/webp" hidden />
+          </div>
 
-    <!-- WhatsApp card -->
-    <div style="background:#0d1117;border:1px solid rgba(255,255,255,.1);border-radius:10px;overflow:hidden">
-      <div style="background:linear-gradient(135deg,#1a2a1a,#0d1a0d);padding:16px 18px;border-bottom:1px solid rgba(255,255,255,.07);display:flex;align-items:center;gap:10px">
-        <div style="width:32px;height:32px;border-radius:8px;background:#25d366;display:flex;align-items:center;justify-content:center;flex-shrink:0">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="#fff"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+          <div class="preview-wrap" id="preview-wrap">
+            <img class="preview-img" id="preview-img" alt="Preview of the uploaded patient photograph" />
+            <button class="analyze-btn" type="button" id="analyze-btn">Analyse with AI pipeline →</button>
+          </div>
+
+          <p class="form-error" id="screen-error" role="alert"></p>
+
+          <p class="panel-disclaimer">
+            lumos.health is a screening aid, not a diagnosis. Results are generated by
+            an AI model and must be confirmed by a trained health professional.
+            Photographs are sent to our servers for analysis.
+          </p>
         </div>
-        <div>
-          <div style="font-size:13px;font-weight:600;color:#fff">WhatsApp</div>
-          <div style="font-size:10px;color:#6b7280">Android · Cross-platform</div>
-        </div>
-        <div style="margin-left:auto;background:rgba(37,211,102,.15);border:1px solid rgba(37,211,102,.3);color:#25d366;font-size:10px;font-weight:500;padding:3px 8px;border-radius:12px">Coming soon</div>
-      </div>
-      <div style="padding:14px 18px">
-        <div style="font-size:12px;color:#6b7280;margin-bottom:10px;line-height:1.6">Send a photo via WhatsApp to screen for Noma — works on any Android or feature phone with internet access.</div>
-        <div style="background:#0a0d14;border:1px solid rgba(255,255,255,.06);border-radius:6px;padding:10px 12px;margin-bottom:12px">
-          <div style="font-size:10px;color:#4b5563;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">WhatsApp number</div>
-          <div style="font-size:13px;font-weight:500;color:#9ca3af;font-family:monospace">+1 (XXX) XXX-XXXX</div>
-        </div>
-        <button disabled style="width:100%;background:rgba(37,211,102,.08);border:1px solid rgba(37,211,102,.2);color:#4b5563;font-size:12px;font-weight:500;padding:8px;border-radius:6px;cursor:not-allowed;font-family:inherit">Open WhatsApp →</button>
-      </div>
+      </section>
     </div>
 
   </div>
-</div>
 
-<!-- CASE MAP SECTION -->
-<div style="padding:48px;max-width:1200px;margin:0 auto">
-  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
-    <div>
-      <div style="font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.7px;margin-bottom:6px">Live surveillance</div>
-      <div style="font-size:20px;font-weight:700;color:#fff">Reported cases</div>
-    </div>
-    <div style="display:flex;gap:20px">
-      <div style="text-align:right"><div style="font-size:18px;font-weight:700;color:#e84040" id="ms-urgent">—</div><div style="font-size:10px;color:var(--muted)">Urgent</div></div>
-      <div style="text-align:right"><div style="font-size:18px;font-weight:700;color:#f59e0b" id="ms-refer">—</div><div style="font-size:10px;color:var(--muted)">Refer</div></div>
-      <div style="text-align:right"><div style="font-size:18px;font-weight:700;color:#60a5fa" id="ms-chws">—</div><div style="font-size:10px;color:var(--muted)">CHWs</div></div>
-    </div>
-  </div>
-  <div id="inline-map" style="width:100%;height:480px;border-radius:10px;overflow:hidden;border:1px solid rgba(255,255,255,.08)"></div>
-</div>
+  <!-- Messaging channels -->
+  <section class="section">
+    <div class="section-eyebrow">No smartphone app needed</div>
+    <h2 class="section-title">Submit via messaging</h2>
+    <p class="section-body">
+      Planned: send a photo to our assistant straight from your phone, with no app
+      download.
+    </p>
 
-<!-- AUTH MODAL -->
-<div class="modal-overlay" id="login-modal" onclick="handleOverlayClick(event)">
+    <div class="channel-grid">
+      <article class="channel-card">
+        <div class="channel-head">
+          <div class="channel-icon" style="background:#34c759">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+            </svg>
+          </div>
+          <div>
+            <div class="channel-name">iMessage</div>
+            <div class="channel-platform">iOS · Apple devices</div>
+          </div>
+          <div class="channel-badge">Not yet available</div>
+        </div>
+        <div class="channel-body">
+          Send a photo of the patient's mouth to our bot and receive a WHO-staged
+          assessment in seconds.
+        </div>
+      </article>
+
+      <article class="channel-card">
+        <div class="channel-head">
+          <div class="channel-icon" style="background:#25d366">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="#fff" aria-hidden="true">
+              <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
+            </svg>
+          </div>
+          <div>
+            <div class="channel-name">WhatsApp</div>
+            <div class="channel-platform">Android · Cross-platform</div>
+          </div>
+          <div class="channel-badge">Not yet available</div>
+        </div>
+        <div class="channel-body">
+          Screen for Noma over WhatsApp on any phone with an internet connection.
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <!-- Case map -->
+  <section class="section">
+    <div class="map-header">
+      <div>
+        <div class="section-eyebrow">Live surveillance</div>
+        <h2 class="section-title">Reported cases</h2>
+      </div>
+      <div class="map-stats">
+        <div class="map-stat">
+          <div class="map-stat-num" style="color:#e84040" id="ms-urgent">—</div>
+          <div class="map-stat-lbl">Urgent</div>
+        </div>
+        <div class="map-stat">
+          <div class="map-stat-num" style="color:#f59e0b" id="ms-refer">—</div>
+          <div class="map-stat-lbl">Refer</div>
+        </div>
+        <div class="map-stat">
+          <div class="map-stat-num" style="color:#a855f7" id="ms-historical">—</div>
+          <div class="map-stat-lbl">Historical</div>
+        </div>
+      </div>
+    </div>
+    <div id="inline-map"></div>
+  </section>
+
+  <footer class="site-footer">
+    Case locations shown on this map are rounded to approximately one kilometre and
+    carry no patient or reporter identifiers. Historical markers are aggregate totals
+    from published literature, not individual case locations.
+  </footer>
+</main>
+
+<!-- Sign-in modal -->
+<div class="modal-overlay" id="login-modal" role="dialog" aria-modal="true" aria-labelledby="login-title">
   <div class="modal">
     <div class="modal-head">
-      <button class="modal-close" onclick="closeLogin()">&#x2715;</button>
+      <button class="modal-close" type="button" id="modal-close-btn" aria-label="Close sign-in">&#x2715;</button>
       <div class="modal-logo">
-        <svg viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M22 12h-4l-3 9L9 3l-3 9H2" /></svg>
       </div>
-      <div class="modal-title">Sign in to lumos.health</div>
+      <div class="modal-title" id="login-title">Sign in to lumos.health</div>
       <div class="modal-sub">Free · Secure · No app required</div>
     </div>
-    <div class="modal-body">
 
-      <!-- Step 1: Role -->
+    <div class="modal-body">
+      <!-- Step 1: role -->
       <div class="login-step active" id="step-role">
         <div class="login-instruction">Who are you?</div>
         <div class="login-hint">Select your role to continue.</div>
         <div class="role-grid">
-          <div class="role-btn" onclick="selectRole('parent', this)">
-            <div class="role-icon">👨‍👩‍👧</div>
+          <button type="button" class="role-btn" data-role="parent" aria-pressed="false">
+            <div class="role-icon" aria-hidden="true">👨‍👩‍👧</div>
             <div class="role-label">Parent / Caregiver</div>
             <div class="role-desc">Concerned about my child</div>
-          </div>
-          <div class="role-btn" onclick="selectRole('chw', this)">
-            <div class="role-icon">🏥</div>
+          </button>
+          <button type="button" class="role-btn" data-role="chw" aria-pressed="false">
+            <div class="role-icon" aria-hidden="true">🏥</div>
             <div class="role-label">Health Worker</div>
             <div class="role-desc">Community health worker</div>
-          </div>
+          </button>
         </div>
-        <button class="modal-btn" id="role-next-btn" onclick="goToStep('step-phone')" disabled>Continue</button>
+        <button class="modal-btn" type="button" id="role-next-btn" disabled>Continue</button>
+        <!-- Revealed only when the server reports it is running in mock mode. -->
+        <button class="modal-back" type="button" id="demo-signin-btn" hidden>
+          Continue with the demo account
+        </button>
       </div>
 
-      <!-- Step 2: Phone -->
+      <!-- Step 2: phone -->
       <div class="login-step" id="step-phone">
-        <div class="login-instruction" id="phone-instruction">What is your phone number?</div>
-        <div class="login-hint" id="phone-hint">Include country code, e.g. +1 630 720 5467</div>
-        <input class="big-input" id="phone-input" type="tel" inputmode="numeric" placeholder="+1 234 567 8901" oninput="onPhoneInput()"/>
-        <div class="login-error" id="phone-error">Could not send code — check your number and try again.</div>
-        <button class="modal-btn" id="phone-next-btn" onclick="requestOtp()" disabled>Send verification code</button>
-        <button class="modal-back" onclick="goToStep('step-role')">&#8592; Back</button>
+        <div class="login-instruction">What is your phone number?</div>
+        <div class="login-hint">Include the country code, for example +227 90 12 34 56.</div>
+        <label class="visually-hidden" for="phone-input">Phone number</label>
+        <input class="big-input" id="phone-input" type="tel" autocomplete="tel" placeholder="+227 90 12 34 56" />
+        <div class="login-error" id="phone-error" role="alert"></div>
+        <button class="modal-btn" type="button" id="phone-next-btn" disabled>Send verification code</button>
+        <div id="recaptcha-anchor"></div>
+        <button class="modal-back" type="button" data-goto="step-role">&#8592; Back</button>
       </div>
 
-      <!-- Step 3: PIN -->
+      <!-- Step 3: code -->
       <div class="login-step" id="step-pin">
         <div class="login-instruction">Enter your 6-digit code</div>
-        <div class="login-hint" id="pin-hint">We sent a code to your phone.</div>
-        <div class="pin-display">
+        <div class="login-hint">We sent a code to your phone.</div>
+        <div class="pin-display" aria-hidden="true">
           <div class="pin-dot" id="pd0"></div>
           <div class="pin-dot" id="pd1"></div>
           <div class="pin-dot" id="pd2"></div>
@@ -375,434 +292,37 @@ body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--t
           <div class="pin-dot" id="pd5"></div>
         </div>
         <div class="pin-pad">
-          <div class="pin-key" onclick="pinPress('1')">1</div>
-          <div class="pin-key" onclick="pinPress('2')">2</div>
-          <div class="pin-key" onclick="pinPress('3')">3</div>
-          <div class="pin-key" onclick="pinPress('4')">4</div>
-          <div class="pin-key" onclick="pinPress('5')">5</div>
-          <div class="pin-key" onclick="pinPress('6')">6</div>
-          <div class="pin-key" onclick="pinPress('7')">7</div>
-          <div class="pin-key" onclick="pinPress('8')">8</div>
-          <div class="pin-key" onclick="pinPress('9')">9</div>
-          <div class="pin-key zero" onclick="pinPress('0')">0</div>
-          <div class="pin-key del" onclick="pinDel()">&#9003;</div>
+          <button type="button" class="pin-key" data-digit="1">1</button>
+          <button type="button" class="pin-key" data-digit="2">2</button>
+          <button type="button" class="pin-key" data-digit="3">3</button>
+          <button type="button" class="pin-key" data-digit="4">4</button>
+          <button type="button" class="pin-key" data-digit="5">5</button>
+          <button type="button" class="pin-key" data-digit="6">6</button>
+          <button type="button" class="pin-key" data-digit="7">7</button>
+          <button type="button" class="pin-key" data-digit="8">8</button>
+          <button type="button" class="pin-key" data-digit="9">9</button>
+          <button type="button" class="pin-key zero" data-digit="0">0</button>
+          <button type="button" class="pin-key del" id="pin-delete" aria-label="Delete last digit">&#9003;</button>
         </div>
-        <div class="login-error" id="pin-error">Incorrect code — please try again.</div>
-        <button class="modal-back" onclick="goToStep('step-phone')">&#8592; Back</button>
+        <div class="login-error" id="pin-error" role="alert"></div>
+        <button class="modal-back" type="button" data-goto="step-phone">&#8592; Back</button>
       </div>
 
-      <!-- Step 4: Success -->
+      <!-- Step 4: done -->
       <div class="login-step" id="step-success">
         <div class="success-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M20 6L9 17l-5-5" />
+          </svg>
         </div>
         <div class="success-title" id="success-title">You're signed in.</div>
         <div class="success-body" id="success-body">You can now submit patient cases for AI screening.</div>
-        <button class="modal-btn" onclick="closeLoginSuccess()">Start screening</button>
+        <button class="modal-btn" type="button" id="success-continue">Start screening</button>
       </div>
-
     </div>
   </div>
 </div>
 
-<script src="firebase-config.js"></script>
-<script type="module">
-import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
-import { getAuth, RecaptchaVerifier, signInWithPhoneNumber } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
-
-const FIREBASE_CONFIG = window.FIREBASE_CONFIG ?? {
-  apiKey: 'REPLACE_WITH_FIREBASE_API_KEY',
-  authDomain: 'REPLACE_WITH_PROJECT_ID.firebaseapp.com',
-  projectId: 'REPLACE_WITH_PROJECT_ID',
-};
-
-const firebaseApp  = initializeApp(FIREBASE_CONFIG);
-const firebaseAuth = getAuth(firebaseApp);
-
-window._firebaseAuth          = firebaseAuth;
-window._RecaptchaVerifier     = RecaptchaVerifier;
-window._signInWithPhoneNumber = signInWithPhoneNumber;
-let confirmationResult = null;
-window._setConfirmation = (r) => { confirmationResult = r; };
-window._getConfirmation = () => confirmationResult;
-</script>
-
-<script>
-const API_BASE = 'http://localhost:3001';
-
-function handleUpload(e){
-  const f=e.target.files[0];if(!f)return;
-  const r=new FileReader();
-  r.onload=ev=>{
-    document.getElementById('preview-img').src=ev.target.result;
-    document.getElementById('preview-wrap').style.display='block';
-    document.getElementById('result-wrap').style.display='none';
-  };
-  r.readAsDataURL(f);
-}
-
-async function runAnalysis(){
-  const ageVal = document.getElementById('field-age').value.trim();
-  const region = document.getElementById('field-region').value.trim();
-  if(!ageVal||!region){ alert('Please fill in patient age and region.'); return; }
-  const btn = document.querySelector('.analyze-btn');
-  btn.textContent='Analysing — please wait…';btn.disabled=true;
-  let lat=0,lng=0;
-  try{
-    const pos=await new Promise((res,rej)=>navigator.geolocation.getCurrentPosition(res,rej,{timeout:5000}));
-    lat=pos.coords.latitude;lng=pos.coords.longitude;
-  }catch(_){}
-  const image_b64=document.getElementById('preview-img').src.split(',')[1]??'';
-  const token=localStorage.getItem('noma_token')?? 'demo';
-  const payload={
-    image_b64,
-    child_meta:{
-      age_months:Math.round(parseFloat(ageVal)*12),
-      sex:document.getElementById('field-sex').value,
-      symptoms:document.getElementById('field-notes').value.trim()||region,
-      nutrition_status:'unknown',
-    },lat,lng,
-  };
-  try{
-    const res=await fetch(`${API_BASE}/api/screen`,{
-      method:'POST',
-      headers:{'Content-Type':'application/json','Authorization':`Bearer ${token}`},
-      body:JSON.stringify(payload),
-    });
-    const data=await res.json();
-    if(!res.ok) throw new Error(data.error??'Screen API failed');
-    const colours={urgent:'#e84040',refer:'#f59e0b',monitor:'#3b82f6',healthy:'#22c55e'};
-    document.getElementById('result-stage').textContent=`Stage ${data.stage} — ${data.triage.charAt(0).toUpperCase()+data.triage.slice(1)}`;
-    document.getElementById('result-stage').style.color=colours[data.triage]??'#e84040';
-    document.getElementById('result-text').textContent=data.clinical_note;
-    if(data.clinic?.name){
-      const el=document.getElementById('result-clinic');
-      el.textContent=`Nearest clinic: ${data.clinic.name} · ${data.clinic.distance_km} km · ${data.clinic.contact}`;
-      el.style.display='block';
-    }
-    window._referralNote=data.referral_note;
-    sessionStorage.setItem('noma_result', JSON.stringify(data));
-    window.location.href = 'viewer.html';
-  }catch(e){
-    alert(`Analysis failed: ${e.message}`);
-    btn.textContent='Analyse with AI pipeline →';btn.disabled=false;
-  }
-}
-
-function copyReferral(){
-  const note=window._referralNote;if(!note)return;
-  navigator.clipboard.writeText(note).then(()=>{
-    const btn=document.getElementById('sms-btn');
-    btn.textContent='Copied ✓';
-    setTimeout(()=>{btn.textContent='Copy referral note →';},2000);
-  });
-}
-
-// AUTH
-let selectedRole=null,pinValue='';
-
-function openLogin(){
-  document.getElementById('login-modal').classList.add('open');
-  document.body.style.overflow='hidden';
-  goToStep('step-role');selectedRole=null;
-  document.querySelectorAll('.role-btn').forEach(b=>b.classList.remove('selected'));
-  document.getElementById('role-next-btn').disabled=true;
-  document.getElementById('phone-input').value='';
-  document.getElementById('phone-next-btn').disabled=true;
-  document.getElementById('phone-error').style.display='none';
-  resetPin();
-}
-function closeLogin(){document.getElementById('login-modal').classList.remove('open');document.body.style.overflow='';}
-function closeLoginSuccess(){closeLogin();document.getElementById('screen').scrollIntoView({behavior:'smooth'});}
-function handleOverlayClick(e){if(e.target===document.getElementById('login-modal'))closeLogin();}
-function goToStep(id){
-  document.querySelectorAll('.login-step').forEach(s=>s.classList.remove('active'));
-  document.getElementById(id).classList.add('active');
-  if(id==='step-pin'){resetPin();document.getElementById('pin-error').style.display='none';}
-}
-function selectRole(role,el){
-  selectedRole=role;
-  document.querySelectorAll('.role-btn').forEach(b=>b.classList.remove('selected'));
-  el.classList.add('selected');
-  document.getElementById('role-next-btn').disabled=false;
-}
-function onPhoneInput(){
-  const val=document.getElementById('phone-input').value.replace(/\D/g,'');
-  document.getElementById('phone-next-btn').disabled=val.length<8;
-  document.getElementById('phone-error').style.display='none';
-}
-function resetPin(){
-  pinValue='';
-  for(let i=0;i<6;i++){const d=document.getElementById('pd'+i);if(d)d.classList.remove('filled');}
-}
-function pinPress(digit){
-  if(pinValue.length>=6)return;
-  pinValue+=digit;
-  document.getElementById('pd'+(pinValue.length-1)).classList.add('filled');
-  document.getElementById('pin-error').style.display='none';
-  if(pinValue.length===6)setTimeout(checkPin,300);
-}
-function pinDel(){
-  if(pinValue.length===0)return;
-  document.getElementById('pd'+(pinValue.length-1)).classList.remove('filled');
-  pinValue=pinValue.slice(0,-1);
-}
-async function requestOtp(){
-  const btn=document.getElementById('phone-next-btn');
-  const phone=document.getElementById('phone-input').value.trim();
-  btn.textContent='Sending…';btn.disabled=true;
-  try{
-    if(!window._recaptchaVerifier){
-      window._recaptchaVerifier=new window._RecaptchaVerifier(window._firebaseAuth,'phone-next-btn',{size:'invisible'});
-    }
-    const result=await window._signInWithPhoneNumber(window._firebaseAuth,phone,window._recaptchaVerifier);
-    window._setConfirmation(result);
-    goToStep('step-pin');
-  }catch(e){
-    console.error('[auth]',e);
-    document.getElementById('phone-error').style.display='block';
-    window._recaptchaVerifier=null;
-  }finally{
-    btn.textContent='Send verification code';btn.disabled=false;
-  }
-}
-async function checkPin(){
-  const confirmation=window._getConfirmation();
-  if(!confirmation){
-    document.getElementById('pin-error').textContent='Session expired — go back and request a new code.';
-    document.getElementById('pin-error').style.display='block';resetPin();return;
-  }
-  try{
-    const credential=await confirmation.confirm(pinValue);
-    const idToken=await credential.user.getIdToken();
-    const res=await fetch(`${API_BASE}/api/auth/firebase`,{
-      method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({idToken}),
-    });
-    const data=await res.json();
-    if(!res.ok){
-      document.getElementById('pin-error').textContent=data.error??'Incorrect code.';
-      document.getElementById('pin-error').style.display='block';resetPin();return;
-    }
-    localStorage.setItem('noma_token',data.token);
-    localStorage.setItem('noma_name',data.name);
-    document.getElementById('success-title').textContent=`Welcome, ${data.name}.`;
-    document.getElementById('success-body').textContent=
-      selectedRole==='parent'
-        ?'You can now upload a photograph of your child for free AI screening.'
-        :'You are signed in as a community health worker. Submit patient cases below.';
-    goToStep('step-success');
-  }catch(e){
-    console.error('[auth]',e);
-    document.getElementById('pin-error').textContent='Incorrect code — please try again.';
-    document.getElementById('pin-error').style.display='block';resetPin();
-  }
-}
-
-// initMouth3D is defined in the module script below and exposed on window
-
-// Alert badge
-fetch(`${API_BASE}/api/alerts?days=7`)
-  .then(r=>r.json())
-  .then(data=>{
-    const count=Array.isArray(data)?data.length:(data.meta?.count??data.alerts?.length??0);
-    document.getElementById('alert-count').textContent=count;
-  })
-  .catch(()=>{document.getElementById('alert-count').textContent='0';});
-</script>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
-<script>
-(function initMap() {
-  const TRIAGE_COLOR = { urgent:'#e84040', refer:'#f59e0b', monitor:'#3b82f6', healthy:'#22c55e' };
-  const HIST_COLOR = '#a855f7';
-
-  const HISTORICAL = [
-    { lat:11.85, lng:13.16, label:'Maiduguri, Nigeria',    period:'2011–2020', cases:1240, region:'Borno State',          r:1.1 },
-    { lat:12.00, lng:8.52,  label:'Kano, Nigeria',         period:'2011–2020', cases:980,  region:'Kano State',           r:0.9 },
-    { lat:10.52, lng:7.44,  label:'Kaduna, Nigeria',       period:'2011–2020', cases:870,  region:'Kaduna State',         r:0.9 },
-    { lat:13.06, lng:5.24,  label:'Sokoto, Nigeria',       period:'2011–2020', cases:760,  region:'Sokoto State',         r:0.8 },
-    { lat:9.07,  lng:7.40,  label:'Abuja, Nigeria',        period:'2011–2020', cases:420,  region:'FCT',                  r:0.6 },
-    { lat:7.38,  lng:3.90,  label:'Ibadan, Nigeria',       period:'1982–1996', cases:133,  region:'Oyo State',            r:0.4 },
-    { lat:12.60, lng:37.47, label:'Gondar, Ethiopia',      period:'2004–2023', cases:94,   region:'Amhara Region',        r:0.4 },
-    { lat:9.03,  lng:38.74, label:'Addis Ababa, Ethiopia', period:'2015–2019', cases:80,   region:'Addis Ababa',          r:0.3 },
-    { lat:11.59, lng:37.39, label:'Bahir Dar, Ethiopia',   period:'2004–2023', cases:88,   region:'Amhara Region',        r:0.4 },
-    { lat:13.80, lng:8.99,  label:'Zinder, Niger',         period:'2001–2006', cases:82,   region:'Zinder Region',        r:0.5 },
-    { lat:14.69, lng:-17.44,label:'Dakar, Senegal',        period:'1981–1993', cases:73,   region:'Dakar Region',         r:0.4 },
-    { lat:16.02, lng:-16.49,label:'Saint-Louis, Senegal',  period:'2012–2014', cases:31,   region:'Saint-Louis Region',   r:0.3 },
-    { lat:14.49, lng:-4.20, label:'Mopti, Mali',           period:'2004–2009', cases:68,   region:'Mopti Region',         r:0.4 },
-    { lat:16.27, lng:-0.04, label:'Gao, Mali',             period:'2004–2009', cases:52,   region:'Gao Region',           r:0.4 },
-    { lat:16.77, lng:-3.00, label:'Tombouctou, Mali',      period:'2004–2009', cases:43,   region:'Tombouctou Region',    r:0.3 },
-  ];
-
-  const map = L.map('inline-map', { center:[12,5], zoom:4, zoomControl:true, scrollWheelZoom:false });
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-    attribution:'© OpenStreetMap © CARTO', subdomains:'abcd', maxZoom:19
-  }).addTo(map);
-  const clusters = L.markerClusterGroup({ maxClusterRadius:40, showCoverageOnHover:false, chunkedLoading:true });
-  map.addLayer(clusters);
-
-  const dotIcon = color => L.divIcon({
-    html: `<svg xmlns="http://www.w3.org/2000/svg" width="8" height="8" viewBox="0 0 8 8"><circle cx="4" cy="4" r="4" fill="${color}" opacity=".85"/></svg>`,
-    className: '', iconSize:[8,8], iconAnchor:[4,4], popupAnchor:[0,-6],
-  });
-  const pinIcon = color => L.divIcon({
-    html: `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="24" viewBox="0 0 20 26"><path d="M10 0C4.477 0 0 4.477 0 10c0 7 10 16 10 16S20 17 20 10C20 4.477 15.523 0 10 0z" fill="${color}" opacity=".9"/><circle cx="10" cy="10" r="4" fill="white" opacity=".9"/></svg>`,
-    className: '', iconSize:[18,24], iconAnchor:[9,24], popupAnchor:[0,-24],
-  });
-
-  // Scatter N individual points around a centre with radius r (degrees)
-  function scatter(h) {
-    const popup = `<div style="font-family:Inter,sans-serif;min-width:170px">
-      <div style="font-size:12px;font-weight:700;color:${HIST_COLOR};margin-bottom:5px">${h.label}</div>
-      <div style="font-size:11px;color:#6b7280;margin-bottom:2px">Region: <span style="color:#94a3b8">${h.region}</span></div>
-      <div style="font-size:11px;color:#6b7280;margin-bottom:2px">Period: <span style="color:#94a3b8">${h.period}</span></div>
-      <div style="font-size:11px;color:#6b7280">Source pool: <span style="color:#94a3b8;font-weight:600">${h.cases.toLocaleString()} cases</span></div>
-      <div style="margin-top:7px;padding-top:7px;border-top:1px solid rgba(255,255,255,.07);font-size:10px;color:#4b5563;font-style:italic">Historical literature data</div>
-    </div>`;
-    for (let i = 0; i < h.cases; i++) {
-      const angle = Math.random() * 2 * Math.PI;
-      const dist  = Math.sqrt(Math.random()) * h.r;
-      const lat   = h.lat + dist * Math.sin(angle);
-      const lng   = h.lng + dist * Math.cos(angle);
-      clusters.addLayer(L.marker([lat, lng], { icon: dotIcon(HIST_COLOR) }).bindPopup(popup, { maxWidth:230 }));
-    }
-  }
-
-  HISTORICAL.forEach(scatter);
-
-  const liveLayer = L.markerClusterGroup({ maxClusterRadius:40, showCoverageOnHover:false, chunkedLoading:true });
-  map.addLayer(liveLayer);
-
-  async function loadLiveCases() {
-    try {
-      const { data } = await fetch(`${API_BASE}/api/cases/map`).then(r => r.json());
-      liveLayer.clearLayers();
-      let urgent=0, refer=0; const chwSet=new Set();
-      (data ?? []).forEach(c => {
-        if (c.triage==='urgent') urgent++;
-        if (c.triage==='refer') refer++;
-        if (c.chw_id) chwSet.add(c.chw_id);
-        if (!c.lat||!c.lng) return;
-        const chw = c.chws;
-        const chwName = chw?.name ?? `CHW ${(c.chw_id??'').slice(-4)}`;
-        const color = TRIAGE_COLOR[c.triage] ?? '#e84040';
-        const popup = `<div style="font-family:Inter,sans-serif;min-width:160px">
-          <div style="font-size:13px;font-weight:700;color:${color};margin-bottom:6px">Stage ${c.stage??'?'} — ${(c.triage??'').charAt(0).toUpperCase()+(c.triage??'').slice(1)}</div>
-          <div style="font-size:11px;color:#6b7280;margin-bottom:3px">Region: <span style="color:#94a3b8">${c.region??'—'}</span></div>
-          <div style="font-size:11px;color:#6b7280;margin-bottom:3px">Age: <span style="color:#94a3b8">${c.child_age_months?Math.round(c.child_age_months/12*10)/10+' yrs':'—'}</span></div>
-          <div style="margin-top:8px;padding-top:8px;border-top:1px solid rgba(255,255,255,.07);font-size:11px;color:#4b5563">Reported by <strong style="color:#60a5fa">${chwName}</strong></div>
-        </div>`;
-        liveLayer.addLayer(L.marker([c.lat,c.lng],{icon:pinIcon(color)}).bindPopup(popup,{maxWidth:220}));
-      });
-      document.getElementById('ms-urgent').textContent = urgent;
-      document.getElementById('ms-refer').textContent = refer;
-      document.getElementById('ms-chws').textContent = chwSet.size;
-    } catch(e) {}
-  }
-
-  loadLiveCases();
-  setInterval(loadLiveCases, 30000);
-})();
-</script>
-
-<script type="module">
-import * as THREE from 'https://esm.sh/three@0.158.0';
-import { GLTFLoader } from 'https://esm.sh/three@0.158.0/examples/jsm/loaders/GLTFLoader.js';
-import { OrbitControls } from 'https://esm.sh/three@0.158.0/examples/jsm/controls/OrbitControls.js';
-
-const DAMAGE_CFG = {
-  0: { mouthColor:0xffb8a0, emissive:0x000000, emissiveInt:0.0, roughness:0.65, lesionColor:null },
-  1: { mouthColor:0xff9090, emissive:0x7a0000, emissiveInt:0.25, roughness:0.72, lesionColor:0xff3030 },
-  2: { mouthColor:0xd96040, emissive:0x8B3000, emissiveInt:0.35, roughness:0.80, lesionColor:0xff6020 },
-  3: { mouthColor:0x8B3030, emissive:0x3a0000, emissiveInt:0.55, roughness:0.90, lesionColor:0xcc1010 },
-  4: { mouthColor:0x4a1a1a, emissive:0x1a0000, emissiveInt:0.65, roughness:0.96, lesionColor:0x880000 },
-  5: { mouthColor:0xd4a090, emissive:0x000000, emissiveInt:0.0,  roughness:0.85, lesionColor:null },
-};
-
-let _mouth3d = null;
-
-window.initMouth3D = function(stage, findings) {
-  const wrap = document.getElementById('mouth3d-wrap');
-  const canvas = document.getElementById('mouth3d-canvas');
-  wrap.style.display = 'block';
-
-  if (_mouth3d) { _mouth3d.renderer.dispose(); _mouth3d = null; }
-
-  const W = wrap.clientWidth || 400, H = 380;
-  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
-  renderer.setSize(W, H);
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-  renderer.outputColorSpace = THREE.SRGBColorSpace;
-  renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.2;
-
-  const scene = new THREE.Scene();
-  scene.background = new THREE.Color(0x050810);
-
-  const camera = new THREE.PerspectiveCamera(40, W / H, 0.01, 100);
-  camera.position.set(0, 0.02, 0.28);
-
-  scene.add(new THREE.AmbientLight(0xffffff, 0.6));
-  const key = new THREE.DirectionalLight(0xfff5ee, 1.4);
-  key.position.set(1, 2, 2); scene.add(key);
-  const fill = new THREE.DirectionalLight(0x8090ff, 0.4);
-  fill.position.set(-2, 0, 1); scene.add(fill);
-
-  const controls = new OrbitControls(camera, renderer.domElement);
-  controls.enableDamping = true; controls.dampingFactor = 0.08;
-  controls.minDistance = 0.1; controls.maxDistance = 0.8;
-  controls.addEventListener('start', () => { controls._interacted = true; });
-
-  const cfg = DAMAGE_CFG[Math.min(stage, 5)] || DAMAGE_CFG[0];
-  let lesionLight = null;
-  if (cfg.lesionColor && stage > 0) {
-    lesionLight = new THREE.PointLight(cfg.lesionColor, 2.5, 0.15);
-    const isLeft = findings && findings.some(f => /left/i.test(f));
-    lesionLight.position.set(isLeft ? -0.04 : 0.04, 0.01, 0.04);
-    scene.add(lesionLight);
-  }
-
-  new GLTFLoader().load('models/mouth/scene.gltf', gltf => {
-    const model = gltf.scene;
-    const box = new THREE.Box3().setFromObject(model);
-    const center = box.getCenter(new THREE.Vector3());
-    const size = box.getSize(new THREE.Vector3());
-    const scale = 0.18 / Math.max(size.x, size.y, size.z);
-    model.scale.setScalar(scale);
-    model.position.sub(center.multiplyScalar(scale));
-
-    model.traverse(child => {
-      if (!child.isMesh || child.material?.name !== 'mouth') return;
-      child.material = child.material.clone();
-      child.material.color.setHex(cfg.mouthColor);
-      child.material.emissive.setHex(cfg.emissive);
-      child.material.emissiveIntensity = cfg.emissiveInt;
-      child.material.roughness = cfg.roughness;
-      if (stage >= 2 && stage <= 4) {
-        child.userData.pulseBase = cfg.emissiveInt;
-        child.userData.pulseMat = child.material;
-      }
-    });
-    scene.add(model);
-    _mouth3d = { renderer, scene, camera, controls, model };
-
-    let t = 0;
-    (function animate() {
-      if (!_mouth3d) return;
-      requestAnimationFrame(animate);
-      t += 0.016;
-      controls.update();
-      if (!controls._interacted) model.rotation.y += 0.003;
-      if (lesionLight && stage >= 2) lesionLight.intensity = 2.0 + Math.sin(t * 2.5) * 0.8;
-      model.traverse(c => {
-        if (c.userData.pulseMat)
-          c.userData.pulseMat.emissiveIntensity = c.userData.pulseBase + Math.sin(t * 1.8) * 0.12;
-      });
-      renderer.render(scene, camera);
-    })();
-  }, undefined, err => { console.warn('[3D]', err); wrap.style.display = 'none'; });
-};
-</script>
+<script type="module" src="/src/main.js"></script>
 </body>
 </html>

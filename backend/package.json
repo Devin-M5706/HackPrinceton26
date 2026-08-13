@@ -1,31 +1,45 @@
 {
-  "name": "noma-alert-backend",
+  "name": "lumos-health-backend",
   "version": "1.0.0",
-  "description": "NomaAlert orchestrator — Dedalus VM swarm + Kimi K2.5 + Supabase",
+  "private": true,
+  "description": "lumos.health orchestrator — Noma triage pipeline, case records and outbreak surveillance",
   "main": "dist/index.js",
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
-    "dev": "tsx src/index.ts",
+    "dev": "tsx watch src/index.ts",
     "build": "tsc",
     "start": "node dist/index.js",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "cleanup:vms": "tsx scripts/cleanup-vms.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.45.0",
-    "firebase-admin": "^12.0.0",
     "cors": "^2.8.5",
     "dedalus-labs": "0.1.0-alpha.8",
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
     "express-rate-limit": "^8.3.2",
+    "firebase-admin": "^12.0.0",
     "helmet": "^7.1.0",
-    "spectrum-ts": "latest"
+    "zod": "^3.23.8"
   },
   "devDependencies": {
+    "@eslint/js": "^9.13.0",
     "@types/cors": "^2.8.17",
     "@types/express": "^4.17.21",
     "@types/node": "^20.14.0",
-    "ts-node": "^10.9.2",
+    "@types/supertest": "^6.0.2",
+    "eslint": "^9.13.0",
+    "supertest": "^7.0.0",
     "tsx": "^4.7.0",
-    "typescript": "^5.4.5"
+    "typescript": "^5.4.5",
+    "typescript-eslint": "^8.11.0",
+    "vitest": "^2.1.4"
   }
 }

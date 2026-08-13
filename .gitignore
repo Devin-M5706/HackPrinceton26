@@ -1,21 +1,31 @@
 # Dependencies
 node_modules/
 
-# Build outputs
-frontend/dist/
-frontend/dev-dist/
-HackPrinceton26/dist/
+# Build output
+dist/
+dev-dist/
+*.tsbuildinfo
 
-# Environment variables
+# Environment — never commit real credentials
 .env
-.env.local
+.env.*
+!.env.example
 
-# Firebase web credentials (local only — do not commit)
+# Firebase web config, if kept as a local file rather than env vars
 frontend/firebase-config.js
 
-# Bun
-bun.lockb
+# Large binaries. Source assets belong in frontend/public/, not archives.
+*.zip
 
-# OS
+# Logs and coverage
+*.log
+npm-debug.log*
+coverage/
+
+# Editors and OS
 .DS_Store
 Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json
+.gstack/

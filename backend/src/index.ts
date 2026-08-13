@@ -1,106 +1,104 @@
-import { config } from "dotenv";
-import { resolve } from "path";
-config({ path: resolve(__dirname, "../../.env") });
-import express from "express";
-import cors from "cors";
-import helmet from "helmet";
+/**
+ * Server entry point.
+ *
+ * Binds the HTTP port, optionally starts the surveillance agent, and shuts
+ * both down cleanly on a signal. The Express app itself lives in app.ts.
+ */
 
-import { authRouter } from "./routes/auth";
-import { screenRouter } from "./routes/screen";
-import { casesRouter } from "./routes/cases";
-import { alertsRouter } from "./routes/alerts";
-import { clinicsRouter } from "./routes/clinics";
-import { healthRouter } from "./routes/health";
-import { initVmPool, drainVmPool } from "./lib/vmPool";
-import { startSurveillance } from "./lib/surveillance";
-import { startPhotonListener } from "./lib/notify";
-import { globalLimiter, screenLimiter } from "./lib/rateLimit";
+import type { Server } from 'http';
+import { config } from './config';
+import { createApp } from './app';
+import { createLogger, describeError } from './lib/logger';
+import { startSurveillance, stopSurveillance } from './lib/surveillance';
 
-const app = express();
-const PORT = process.env.PORT ?? 3001;
+const log = createLogger('server');
 
-// ── Middleware ────────────────────────────────────────────────────────────────
+/** How long to let in-flight requests finish before forcing exit. */
+const SHUTDOWN_GRACE_MS = 15_000;
 
-app.use(helmet());
-app.use(cors({
-  origin: process.env.FRONTEND_URL ?? '*',
-  allowedHeaders: ['Authorization', 'Content-Type'],
-}));
-app.use(express.json({ limit: "20mb" })); // base64 images can be large
-app.use(globalLimiter);
+const app = createApp();
 
-// ── Routes ────────────────────────────────────────────────────────────────────
-
-app.use("/api/auth", authRouter);
-app.use("/api/screen", screenLimiter, screenRouter);
-app.use("/api/cases", casesRouter);
-app.use("/api/alerts", alertsRouter);
-app.use("/api/clinics", clinicsRouter);
-app.use("/api/health", healthRouter);
-
-// 404 catch-all
-app.use((_req, res) => res.status(404).json({ error: "Not found" }));
-
-// Global error handler
-app.use(
-  (
-    err: Error,
-    _req: express.Request,
-    res: express.Response,
-    _next: express.NextFunction,
-  ) => {
-    console.error("[server] Unhandled error:", err);
-    res.status(500).json({ error: "Internal server error" });
-  },
-);
-
-// ── Startup ───────────────────────────────────────────────────────────────────
-
-async function start() {
-  app.listen(PORT, () => {
-    console.log(`[server] lumos.health orchestrator listening on :${PORT}`);
-    console.log(
-      `[server] Mock mode: ${process.env.MOCK_MODE === "true" ? "ON" : "OFF"}`,
-    );
+function start(): Server {
+  const server = app.listen(config.PORT, () => {
+    log.info('Listening', {
+      port: config.PORT,
+      env: config.NODE_ENV,
+      mock_mode: config.MOCK_MODE,
+    });
   });
 
-  // Start Photon Spectrum iMessage listener — registers health authority subscribers
-  startPhotonListener().catch((err: Error) =>
-    console.error("[startup] Photon Spectrum listener failed:", err.message),
-  );
-
-  // Spin up warm VM pool (VMs 1–3) in background — don't block server start
-  if (process.env.MOCK_MODE !== "true") {
-    initVmPool().catch((err: Error) =>
-      console.error("[startup] VM pool init failed:", err.message),
-    );
-
-    // Start VM 4 (surveillance) — persistent, never exits
-    // NOTE: On Vercel this won't persist across function invocations.
-    //       Call POST /api/health/surveillance/start after deploying to Vercel.
-    startSurveillance().catch((err: Error) =>
-      console.error("[startup] Surveillance agent failed:", err.message),
+  // The surveillance agent needs a long-lived process and an address the VM
+  // can post back to, so it is opt-in via ORCHESTRATOR_URL rather than
+  // something every local `npm run dev` provisions a billable VM for.
+  if (!config.MOCK_MODE && config.ORCHESTRATOR_URL) {
+    startSurveillance().catch((err: unknown) =>
+      log.error('Surveillance agent did not start', describeError(err)),
     );
   } else {
-    console.log("[server] MOCK_MODE=true — skipping VM pool and surveillance");
+    log.info('Surveillance agent not started', {
+      reason: config.MOCK_MODE ? 'mock mode' : 'ORCHESTRATOR_URL not set',
+    });
   }
+
+  return server;
 }
 
-// ── Graceful shutdown ─────────────────────────────────────────────────────────
+/**
+ * Close the listener, then release remote resources.
+ *
+ * The previous shutdown path destroyed VMs but never closed the server, so
+ * `process.exit(0)` cut off in-flight requests mid-response.
+ */
+function installShutdownHandlers(server: Server): void {
+  let shuttingDown = false;
 
-process.on("SIGTERM", async () => {
-  console.log("[server] SIGTERM — draining VM pool…");
-  await drainVmPool();
-  process.exit(0);
-});
+  const shutdown = (signal: string) => {
+    void (async () => {
+      if (shuttingDown) return;
+      shuttingDown = true;
+      log.info(`${signal} received — shutting down`);
 
-process.on("SIGINT", async () => {
-  console.log("[server] SIGINT — draining VM pool…");
-  await drainVmPool();
-  process.exit(0);
-});
+      const force = setTimeout(() => {
+        log.error('Graceful shutdown timed out — forcing exit');
+        process.exit(1);
+      }, SHUTDOWN_GRACE_MS);
+      force.unref();
 
-start();
+      try {
+        await new Promise<void>((resolve, reject) => {
+          server.close((err) => (err ? reject(err) : resolve()));
+        });
+        await stopSurveillance();
+        clearTimeout(force);
+        log.info('Shutdown complete');
+        process.exit(0);
+      } catch (err) {
+        log.error('Error during shutdown', describeError(err));
+        process.exit(1);
+      }
+    })();
+  };
 
-// Export for Vercel serverless handler
+  process.on('SIGTERM', () => shutdown('SIGTERM'));
+  process.on('SIGINT', () => shutdown('SIGINT'));
+
+  // A rejection reaching this point means a bug: something escaped the route
+  // wrapper. Log it loudly rather than letting Node exit silently.
+  process.on('unhandledRejection', (reason) => {
+    log.error('Unhandled promise rejection', describeError(reason));
+  });
+
+  process.on('uncaughtException', (err) => {
+    log.error('Uncaught exception — exiting', describeError(err));
+    process.exit(1);
+  });
+}
+
+// Vercel imports this module for its serverless handler; only bind a port when
+// executed directly.
+if (require.main === module) {
+  installShutdownHandlers(start());
+}
+
+export { app, createApp };
 export default app;

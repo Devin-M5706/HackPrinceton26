@@ -1,123 +1,117 @@
 /**
- * GET /api/health   — system health check
- * Also exposes POST /api/health/surveillance/start to spin VM 4 on demand.
+ * Health and operations endpoints.
+ *
+ *   GET  /api/health                      — public liveness/readiness probe
+ *   POST /api/health/surveillance/start   — internal, starts the surveillance VM
+ *   POST /api/health/notify               — internal, dispatches an outbreak alert
+ *
+ * The two POST routes provision billable infrastructure and send messages to
+ * real health authorities, so both sit behind the shared internal secret. The
+ * start endpoint was previously unauthenticated, which let any anonymous
+ * caller spin up VMs.
  */
 
-import { Router, Request, Response } from "express";
-import { supabase } from "../lib/supabase";
-import { poolStatus } from "../lib/vmPool";
-import { startSurveillance, getSurveillanceStatus } from "../lib/surveillance";
-import {
-  dispatchAlertNotifications,
-  iMessageSubscriberCount,
-  type AlertPayload,
-} from "../lib/notify";
+import { Router, type Request, type Response } from 'express';
+import { config } from '../config';
+import { requireInternalSecret } from '../lib/auth';
+import { asyncHandler } from '../lib/errors';
+import { createLogger, describeError } from '../lib/logger';
+import { dispatchAlertNotifications } from '../lib/notify';
+import { supabase } from '../lib/supabase';
+import { getSurveillanceStatus, startSurveillance } from '../lib/surveillance';
+import { alertPayloadSchema, parseOrThrow } from '../lib/validation';
+
+const log = createLogger('health');
 
 export const healthRouter = Router();
 
-// GET /api/health — no auth required (monitoring friendly)
-healthRouter.get("/", async (_req: Request, res: Response) => {
-  const pool = poolStatus();
-  const surveillance = getSurveillanceStatus();
+const DB_PROBE_TIMEOUT_MS = 3000;
 
-  // Lightweight DB ping — skip if Supabase not configured
-  let dbOk = false;
-  let lastAlertAt: string | null = null;
+/** Resolve to false rather than hang if the database is unreachable. */
+async function probeDatabase(): Promise<boolean> {
+  if (!config.supabaseConfigured) return false;
 
-  if (process.env.SUPABASE_URL) {
-    try {
-      const { error } = await supabase().from("alerts").select("id").limit(1);
-      dbOk = !error;
-    } catch {
-      dbOk = false;
-    }
+  const probe = supabase()
+    .from('alerts')
+    .select('id', { head: true, count: 'exact' })
+    .limit(1)
+    .then(({ error }) => !error);
 
-    try {
-      const { data } = await supabase()
-        .from("alerts")
-        .select("fired_at")
-        .order("fired_at", { ascending: false })
-        .limit(1)
-        .single();
-      lastAlertAt = (data as { fired_at: string } | null)?.fired_at ?? null;
-    } catch {
-      /* ignore */
-    }
+  const timeout = new Promise<boolean>((resolve) =>
+    setTimeout(() => resolve(false), DB_PROBE_TIMEOUT_MS).unref?.(),
+  );
+
+  try {
+    return await Promise.race([probe, timeout]);
+  } catch {
+    return false;
   }
+}
 
-  const healthy = pool.ready || process.env.MOCK_MODE === "true";
+/**
+ * GET /api/health — no auth, for uptime monitors and load balancers.
+ *
+ * Reports only booleans and counts. It must not leak configuration values,
+ * machine IDs or error strings, since anyone can call it.
+ */
+healthRouter.get(
+  '/',
+  asyncHandler(async (_req: Request, res: Response) => {
+    const dbOk = await probeDatabase();
+    const surveillance = getSurveillanceStatus();
 
-  res.status(healthy ? 200 : 503).json({
-    status: healthy ? "ok" : "degraded",
-    timestamp: new Date().toISOString(),
-    mock_mode: process.env.MOCK_MODE === "true",
-    supabase: { connected: dbOk, configured: !!process.env.SUPABASE_URL },
-    vm_pool: pool,
-    surveillance,
-    last_alert_at: lastAlertAt,
-    notifications: {
-      whatsapp_configured: !!(
-        process.env.WHATSAPP_PHONE_NUMBER_ID &&
-        process.env.WHATSAPP_ACCESS_TOKEN
-      ),
-      imessage_configured: !!(
-        process.env.PHOTON_PROJECT_ID && process.env.PHOTON_PROJECT_SECRET
-      ),
-      imessage_subscribers: iMessageSubscriberCount(),
-    },
-  });
-});
+    // The process is healthy if it can serve requests. Optional subsystems
+    // being down is reported, not fatal — flapping a 503 would make a load
+    // balancer pull a server that is still perfectly able to triage.
+    const ready = config.MOCK_MODE || dbOk;
 
-// POST /api/health/surveillance/start — manually spin VM 4
+    res.status(ready ? 200 : 503).json({
+      status: ready ? 'ok' : 'degraded',
+      timestamp: new Date().toISOString(),
+      mock_mode: config.MOCK_MODE,
+      dependencies: {
+        database: { configured: config.supabaseConfigured, reachable: dbOk },
+        inference: { configured: config.dedalusConfigured },
+        firebase: { configured: config.firebaseConfigured },
+        whatsapp: { configured: config.whatsappConfigured },
+      },
+      surveillance: {
+        running: surveillance.running,
+        started_at: surveillance.startedAt,
+        healthy: surveillance.error === null,
+      },
+    });
+  }),
+);
+
+/** POST /api/health/surveillance/start — provisions the persistent VM. */
 healthRouter.post(
-  "/surveillance/start",
-  async (_req: Request, res: Response) => {
-    const status = getSurveillanceStatus();
-    if (status.running) {
-      res.json({ message: "Surveillance already running", status });
+  '/surveillance/start',
+  requireInternalSecret,
+  asyncHandler(async (_req: Request, res: Response) => {
+    const current = getSurveillanceStatus();
+    if (current.running) {
+      res.json({ message: 'Surveillance already running', status: current });
       return;
     }
 
-    try {
-      await startSurveillance();
-      res.json({
-        message: "Surveillance agent started",
-        status: getSurveillanceStatus(),
-      });
-    } catch (err) {
-      res.status(500).json({ error: String(err) });
-    }
-  },
+    await startSurveillance();
+    res.json({ message: 'Surveillance agent started', status: getSurveillanceStatus() });
+  }),
 );
 
-// POST /api/health/notify — internal endpoint called by VM 4 to dispatch iMessage alerts
-// Protected by a shared secret so it is not accessible to external callers.
-healthRouter.post("/notify", async (req: Request, res: Response) => {
-  const secret = req.headers["x-internal-secret"];
-  const expected = process.env.ORCHESTRATOR_INTERNAL_SECRET;
+/** POST /api/health/notify — called by the surveillance VM when a cluster fires. */
+healthRouter.post(
+  '/notify',
+  requireInternalSecret,
+  asyncHandler(async (req: Request, res: Response) => {
+    const payload = parseOrThrow(alertPayloadSchema, req.body, 'alert payload');
 
-  if (!expected || secret !== expected) {
-    res.status(401).json({ error: "Unauthorized" });
-    return;
-  }
+    // Acknowledge immediately; the VM should not block on message delivery.
+    void dispatchAlertNotifications(payload).catch((err: unknown) =>
+      log.error('Alert dispatch failed', describeError(err)),
+    );
 
-  const payload = req.body as AlertPayload;
-
-  if (
-    typeof payload.region !== "string" ||
-    typeof payload.case_count !== "number" ||
-    typeof payload.radius_km !== "number" ||
-    typeof payload.center_lat !== "number" ||
-    typeof payload.center_lng !== "number"
-  ) {
-    res.status(400).json({ error: "Invalid alert payload" });
-    return;
-  }
-
-  // Dispatch asynchronously — respond immediately so VM 4 is not held up
-  dispatchAlertNotifications(payload).catch((err: Error) =>
-    console.error("[health/notify] Dispatch error:", err.message),
-  );
-
-  res.json({ queued: true, channels: ["whatsapp", "imessage"] });
-});
+    res.status(202).json({ queued: true });
+  }),
+);

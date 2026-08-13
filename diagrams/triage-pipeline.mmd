@@ -1,0 +1,17 @@
+graph TD
+  CHW["CHW photo<br/>+ child meta"] --> API["POST /api/screen<br/>validate + decode"]
+  API --> S1["Stage 1 Vision<br/>WHO stage, risk score"]
+  S1 -->|parsed| S2["Stage 2 Clinical<br/>triage, recommendation"]
+  S1 -->|unusable| DEG["Flag degraded<br/>triage = refer"]
+  S2 -->|parsed| S3["Stage 3 Referral<br/>nearest clinic + note"]
+  S2 -->|unusable| DEG
+  DEG --> S3
+  S3 --> DB[("Supabase<br/>cases")]
+  S3 --> OUT["Triage packet<br/>degraded flag shown"]
+
+  classDef stage fill:#dbeafe,stroke:#1e40af,color:#1e3a8a
+  classDef fail fill:#fee2e2,stroke:#b91c1c,color:#7f1d1d
+  classDef store fill:#dcfce7,stroke:#15803d,color:#14532d
+  class S1,S2,S3 stage
+  class DEG fail
+  class DB store
